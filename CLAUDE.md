@@ -106,7 +106,7 @@ Tidak ada API key AI, prompt, atau SDK LLM di kode Flutter. Semua AI lewat Edge 
 
 ### 2. Setiap tabel wajib punya RLS dan test pgTAP
 
-`alter table … enable row level security` dan policy-nya ditulis di migration yang sama dengan `create table`. Tiap tabel baru punya test pgTAP yang membuktikan user A tidak bisa membaca atau mengubah data user B. Tabel tanpa RLS bisa dibaca siapa pun yang memegang anon key.
+`alter table … enable row level security` dan policy-nya ditulis di migration yang sama dengan `create table`. Tiap tabel baru punya test pgTAP yang membuktikan user A tidak bisa membaca atau mengubah data user B. Tabel tanpa RLS bisa dibaca siapa pun yang memegang publishable key (dulu disebut anon key).
 
 ### 3. Schema hanya berubah lewat migration
 
