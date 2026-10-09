@@ -246,7 +246,7 @@ Edge Functions: `@anthropic-ai/sdk`, `zod`, `@supabase/supabase-js` (import deng
 ## Code Style
 
 - File: snake_case. Class: PascalCase.
-- Konstanta ditulis sebagai `static const` di dalam class (`RepmindColors.lime`), bukan dengan prefix `k`.
+- Konstanta ditulis sebagai `static const` di dalam class (`RepmindRadius.card`), bukan dengan prefix `k`.
 - Nama model tanpa suffix: `Profile`, bukan `ProfileModel`. Nama file tetap `profile_model.dart`.
 - Nama provider dibuat otomatis oleh `@riverpod`. Jangan menulisnya manual.
 - Copy UI dalam bahasa Inggris. Dokumen di `docs/` dalam bahasa Indonesia, dengan istilah teknis tetap bahasa Inggris.
