@@ -257,17 +257,6 @@ Edge Functions: `@anthropic-ai/sdk`, `zod`, `@supabase/supabase-js` (import deng
 
 ### Komentar
 
-Kode yang baik menjelaskan dirinya sendiri. **Tulis komentar hanya untuk menjelaskan *kenapa*, bukan *apa*.**
+**Kode sumber ditulis tanpa komentar**, termasuk doc comment `///`. Aturan ini berlaku untuk Dart, SQL migration dan test pgTAP, TypeScript di Edge Functions, Kotlin/Swift, dan script. Nama yang jelas dan fungsi kecil menggantikan komentar. Kalau ada keputusan yang alasannya tidak terbaca dari kode, tulis alasannya di spec, plan, atau pesan commit.
 
-```dart
-// ✗ Mengulang kode
-// Ambil profil user
-Future<Profile> fetchProfile() => _dataSource.fetchProfile();
-
-// ✓ Menjelaskan keputusan yang tidak terbaca dari kode
-// Query ?v= memaksa Image.network mengambil ulang setelah upload,
-// karena path avatar selalu sama dan gambar lama masih di-cache.
-final url = '$publicUrl?v=${DateTime.now().millisecondsSinceEpoch}';
-```
-
-Hindari juga header dekoratif (`// =====`) dan doc comment basa-basi yang hanya mengulang nama method.
+File konfigurasi (`.gitignore`, YAML, TOML, xcconfig) boleh berisi komentar singkat, misalnya instruksi setup.
