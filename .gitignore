@@ -46,3 +46,6 @@ app.*.map.json
 
 # Superpowers brainstorming companion (local mockups)
 .superpowers/
+
+# Spec and plan stay on the owner's machine; only the code is published.
+docs/superpowers/

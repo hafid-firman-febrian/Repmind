@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-> **Pekerjaan berjalan: rebrand Voltry → Repmind (mulai 2026-10-09).** Nama Voltry dan visual Candy Sport sekarang dipakai app analisis makanan di `../voltry`. Project ini berganti nama menjadi **Repmind** dengan visual baru. Sebelum mengerjakan apa pun, baca `docs/superpowers/specs/2026-10-09-repmind-rebrand-design.md`, lalu plan rebrand di `docs/superpowers/plans/` beserta checkbox progresnya. Selama rebrand berjalan, isi file ini masih sebagian versi Voltry. Kalau ada yang bertentangan, spec rebrand yang berlaku. Catatan ini dihapus di task terakhir plan rebrand.
+> **Pekerjaan berjalan: rebrand Voltry → Repmind (mulai 2026-10-09).** Nama Voltry dan visual Candy Sport sekarang dipakai app analisis makanan di `../voltry`. Project ini berganti nama menjadi **Repmind** dengan visual baru. Sebelum mengerjakan apa pun, baca `docs/superpowers/specs/2026-10-09-repmind-rebrand-design.md`, lalu plan rebrand di `docs/superpowers/plans/` beserta checkbox progresnya. Spec dan plan hanya ada di mesin owner (`docs/superpowers/` di-gitignore), jadi jangan mencarinya di riwayat git. Selama rebrand berjalan, isi file ini masih sebagian versi Voltry. Kalau ada yang bertentangan, spec rebrand yang berlaku. Catatan ini dihapus di task terakhir plan rebrand.
 
 ## Project Context
 
