@@ -9,7 +9,9 @@ abstract final class ProfileRules {
   static double? parseDecimal(String input) {
     final normalized = input.trim().replaceAll(',', '.');
     if (normalized.isEmpty) return null;
-    return double.tryParse(normalized);
+    final value = double.tryParse(normalized);
+    if (value == null || !value.isFinite) return null;
+    return value;
   }
 
   static String? validateWeight(String input) => _validateRange(

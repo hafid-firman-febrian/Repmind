@@ -14,6 +14,11 @@ void main() {
       expect(ProfileRules.parseDecimal('abc'), isNull);
       expect(ProfileRules.parseDecimal('1,234.5'), isNull);
     });
+
+    test('rejects non-finite values', () {
+      expect(ProfileRules.parseDecimal('NaN'), isNull);
+      expect(ProfileRules.parseDecimal('Infinity'), isNull);
+    });
   });
 
   group('validateWeight', () {
@@ -21,6 +26,10 @@ void main() {
       expect(ProfileRules.validateWeight('25'), isNull);
       expect(ProfileRules.validateWeight('72,5'), isNull);
       expect(ProfileRules.validateWeight('350'), isNull);
+    });
+
+    test('rejects NaN as a weight', () {
+      expect(ProfileRules.validateWeight('NaN'), isNotNull);
     });
 
     test('explains empty and out-of-range values', () {
