@@ -7,6 +7,7 @@ import '../../features/auth/presentation/pages/sign_in_page.dart';
 import '../../features/auth/presentation/pages/sign_up_page.dart';
 import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/auth/presentation/pages/welcome_page.dart';
+import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/profile/presentation/controllers/profile_controller.dart';
 import 'app_routes.dart';
 import 'redirect.dart';
@@ -32,6 +33,10 @@ GoRouter appRouter(Ref ref) {
       GoRoute(path: AppRoutes.welcome, builder: (_, _) => const WelcomePage()),
       GoRoute(path: AppRoutes.signIn, builder: (_, _) => const SignInPage()),
       GoRoute(path: AppRoutes.signUp, builder: (_, _) => const SignUpPage()),
+      GoRoute(
+        path: AppRoutes.onboarding,
+        builder: (_, _) => const OnboardingPage(),
+      ),
     ],
   );
 
