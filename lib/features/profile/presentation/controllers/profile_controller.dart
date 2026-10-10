@@ -21,27 +21,24 @@ class ProfileController extends _$ProfileController {
   Future<void> saveDetails(
     ProfileDetails details, {
     bool completeOnboarding = false,
-  }) async {
-    final updated = await ref
-        .read(profileRepositoryProvider)
-        .saveDetails(
-          _requireUserId(),
-          details,
-          completeOnboarding: completeOnboarding,
-        );
-    if (ref.mounted) state = AsyncData(updated);
-  }
+  }) => _commit(
+    (userId, repository) => repository.saveDetails(
+      userId,
+      details,
+      completeOnboarding: completeOnboarding,
+    ),
+  );
 
-  Future<void> updateAvatar(Uint8List bytes) async {
-    final updated = await ref
-        .read(profileRepositoryProvider)
-        .updateAvatar(_requireUserId(), bytes);
-    if (ref.mounted) state = AsyncData(updated);
-  }
+  Future<void> updateAvatar(Uint8List bytes) =>
+      _commit((userId, repository) => repository.updateAvatar(userId, bytes));
 
-  String _requireUserId() {
+  Future<void> _commit(
+    Future<Profile> Function(String userId, ProfileRepository repository) write,
+  ) async {
     final userId = ref.read(currentUserIdProvider);
     if (userId == null) throw const UnknownFailure();
-    return userId;
+    final updated = await write(userId, ref.read(profileRepositoryProvider));
+    final stillSameUser = ref.read(currentUserIdProvider) == userId;
+    if (ref.mounted && stillSameUser) state = AsyncData(updated);
   }
 }
