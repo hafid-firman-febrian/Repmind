@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/repmind_radius.dart';
+import '../theme/repmind_decorations.dart';
 import '../theme/theme_context.dart';
 
 class HeroCard extends StatelessWidget {
@@ -30,11 +30,7 @@ class HeroCard extends StatelessWidget {
 
     return Container(
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: colors.lime,
-        borderRadius: BorderRadius.circular(RepmindRadius.hero),
-        border: Border.all(color: colors.limeEdge),
-      ),
+      decoration: RepmindDecorations.limeHero(colors),
       child: Stack(
         children: [
           if (watermark != null)
