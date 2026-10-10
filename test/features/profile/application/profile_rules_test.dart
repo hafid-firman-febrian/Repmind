@@ -58,4 +58,14 @@ void main() {
     expect(ProfileRules.formatDecimal(175), '175');
     expect(ProfileRules.formatDecimal(72.5), '72.5');
   });
+
+  test('formatWeight appends kg', () {
+    expect(ProfileRules.formatWeight(72.5), '72.5 kg');
+    expect(ProfileRules.formatWeight(80), '80 kg');
+  });
+
+  test('formatHeight appends cm', () {
+    expect(ProfileRules.formatHeight(175), '175 cm');
+    expect(ProfileRules.formatHeight(175.5), '175.5 cm');
+  });
 }

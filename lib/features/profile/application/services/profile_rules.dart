@@ -34,6 +34,12 @@ abstract final class ProfileRules {
       ? value.toInt().toString()
       : value.toString();
 
+  static String formatWeight(double kilograms) =>
+      '${formatDecimal(kilograms)} kg';
+
+  static String formatHeight(double centimeters) =>
+      '${formatDecimal(centimeters)} cm';
+
   static String? _validateRange(
     String input, {
     required String field,

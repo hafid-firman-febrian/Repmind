@@ -10,6 +10,8 @@ import '../../features/auth/presentation/pages/welcome_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/profile/presentation/controllers/profile_controller.dart';
+import '../../features/profile/presentation/pages/edit_profile_page.dart';
+import '../../features/profile/presentation/pages/profile_page.dart';
 import 'app_routes.dart';
 import 'redirect.dart';
 
@@ -39,6 +41,13 @@ GoRouter appRouter(Ref ref) {
         builder: (_, _) => const OnboardingPage(),
       ),
       GoRoute(path: AppRoutes.home, builder: (_, _) => const HomePage()),
+      GoRoute(
+        path: AppRoutes.profile,
+        builder: (_, _) => const ProfilePage(),
+        routes: [
+          GoRoute(path: 'edit', builder: (_, _) => const EditProfilePage()),
+        ],
+      ),
     ],
   );
 

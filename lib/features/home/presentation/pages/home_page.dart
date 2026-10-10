@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/theme_context.dart';
 import '../../../../core/widgets/hero_card.dart';
+import '../../../../core/widgets/loading_scaffold.dart';
 import '../../../../core/widgets/stat_tile.dart';
 import '../../../../core/widgets/tag_badge.dart';
 import '../../../profile/application/services/body_metrics.dart';
@@ -21,7 +22,7 @@ class HomePage extends ConsumerWidget {
     final profile = ref.watch(profileControllerProvider).value;
     final details = profile?.details;
     if (profile == null || details == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const LoadingScaffold();
     }
 
     final colors = context.colors;
@@ -74,7 +75,7 @@ class HomePage extends ConsumerWidget {
               children: [
                 Expanded(
                   child: StatTile(
-                    value: '${ProfileRules.formatDecimal(details.weightKg)} kg',
+                    value: ProfileRules.formatWeight(details.weightKg),
                     label: 'Weight',
                     highlighted: true,
                   ),
@@ -82,7 +83,7 @@ class HomePage extends ConsumerWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: StatTile(
-                    value: '${ProfileRules.formatDecimal(details.heightCm)} cm',
+                    value: ProfileRules.formatHeight(details.heightCm),
                     label: 'Height',
                   ),
                 ),
