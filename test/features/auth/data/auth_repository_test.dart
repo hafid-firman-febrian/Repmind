@@ -142,7 +142,20 @@ void main() {
     await repository.signOut();
 
     verify(() => auth.signOut()).called(1);
+    verify(() => google.signOut()).called(1);
   });
+
+  test(
+    'signOut still signs out of Google when Supabase sign-out fails',
+    () async {
+      when(() => auth.signOut()).thenThrow(AuthRetryableFetchException());
+      when(() => google.signOut()).thenAnswer((_) async {});
+
+      await expectLater(repository.signOut(), throwsA(isA<NetworkFailure>()));
+
+      verify(() => google.signOut()).called(1);
+    },
+  );
 
   test('authStatusChanges maps sessions to AuthStatus', () {
     when(() => auth.onAuthStateChange).thenAnswer(
@@ -156,5 +169,21 @@ void main() {
       repository.authStatusChanges(),
       emitsInOrder([AuthStatus.signedOut, AuthStatus.signedIn]),
     );
+  });
+
+  test('authStatusChanges maps stream errors to AppException', () {
+    when(
+      () => auth.onAuthStateChange,
+    ).thenAnswer((_) => Stream<AuthState>.error(AuthRetryableFetchException()));
+
+    expect(repository.authStatusChanges(), emitsError(isA<NetworkFailure>()));
+  });
+
+  test('authStatusChanges maps unknown stream errors to UnknownFailure', () {
+    when(
+      () => auth.onAuthStateChange,
+    ).thenAnswer((_) => Stream<AuthState>.error(const AuthException('boom')));
+
+    expect(repository.authStatusChanges(), emitsError(isA<UnknownFailure>()));
   });
 }

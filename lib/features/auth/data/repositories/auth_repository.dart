@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -16,10 +18,14 @@ class AuthRepository {
 
   GoTrueClient get _auth => _client.auth;
 
-  Stream<AuthStatus> authStatusChanges() => _auth.onAuthStateChange.map(
-    (state) =>
-        state.session == null ? AuthStatus.signedOut : AuthStatus.signedIn,
-  );
+  Stream<AuthStatus> authStatusChanges() => _auth.onAuthStateChange
+      .map(
+        (state) =>
+            state.session == null ? AuthStatus.signedOut : AuthStatus.signedIn,
+      )
+      .handleError((Object error, StackTrace stackTrace) {
+        Error.throwWithStackTrace(mapToAppException(error), stackTrace);
+      });
 
   String? get currentUserId => _auth.currentUser?.id;
 
@@ -53,10 +59,20 @@ class AuthRepository {
   });
 
   Future<void> signOut() => runGuarded(() async {
-    await _auth.signOut();
     try {
-      await _google.signOut();
-    } catch (_) {}
+      await _auth.signOut();
+    } finally {
+      try {
+        await _google.signOut();
+      } catch (error, stackTrace) {
+        log(
+          'Google sign-out failed',
+          name: 'repmind',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }
   });
 
   static String _normalizeEmail(String email) => email.trim().toLowerCase();
