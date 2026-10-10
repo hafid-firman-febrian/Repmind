@@ -1,0 +1,14 @@
+import 'package:mocktail/mocktail.dart';
+import 'package:repmind/features/auth/data/data_sources/google_auth_data_source.dart';
+import 'package:repmind/features/auth/data/repositories/auth_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+class MockSupabaseClient extends Mock implements SupabaseClient {}
+
+class MockGoTrueClient extends Mock implements GoTrueClient {}
+
+class MockSession extends Mock implements Session {}
+
+class MockGoogleAuthDataSource extends Mock implements GoogleAuthDataSource {}
+
+class MockAuthRepository extends Mock implements AuthRepository {}
