@@ -126,4 +126,38 @@ void main() {
     );
     expect(authSnackBarError(const AsyncData<void>(null)), isNull);
   });
+
+  test(
+    'a retry in flight hides the previous error from both helpers',
+    () async {
+      final pending = Completer<void>();
+      var attempts = 0;
+      when(
+        () => repository.signIn(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+        ),
+      ).thenAnswer((_) {
+        attempts++;
+        return attempts == 1
+            ? Future.error(const NetworkFailure())
+            : pending.future;
+      });
+      final notifier = container.read(authControllerProvider.notifier);
+
+      await notifier.signIn(email: 'a@b.co', password: 'secret123');
+      final failed = container.read(authControllerProvider);
+      expect(authSnackBarError(failed), const NetworkFailure().message);
+
+      final retry = notifier.signIn(email: 'a@b.co', password: 'secret123');
+      final retrying = container.read(authControllerProvider);
+
+      expect(retrying.isLoading, isTrue);
+      expect(retrying.hasError, isTrue);
+      expect(authSnackBarError(retrying), isNull);
+      expect(visibleAuthError(retrying), isNull);
+      pending.complete();
+      await retry;
+    },
+  );
 }

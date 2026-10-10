@@ -97,7 +97,10 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
               const GoogleSignInButton(),
               const SizedBox(height: 8),
               TextButton(
-                onPressed: () => context.pushReplacement(AppRoutes.signIn),
+                onPressed: () {
+                  ref.invalidate(authControllerProvider);
+                  context.pushReplacement(AppRoutes.signIn);
+                },
                 child: Text(
                   'Already have an account? Sign in',
                   style: context.textStyles.body,

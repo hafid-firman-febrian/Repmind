@@ -42,14 +42,14 @@ class AuthController extends _$AuthController {
 
 String? visibleAuthError(AsyncValue<void> state) {
   final error = state.error;
-  if (error == null) return null;
+  if (state.isLoading || error == null) return null;
   final exception = mapToAppException(error);
   return _isFormError(exception) ? exception.message : null;
 }
 
 String? authSnackBarError(AsyncValue<void> state) {
   final error = state.error;
-  if (error == null) return null;
+  if (state.isLoading || error == null) return null;
   final exception = mapToAppException(error);
   if (exception is SignInCancelled || _isFormError(exception)) return null;
   return exception.message;
