@@ -6,6 +6,7 @@ import 'package:repmind/core/widgets/option_chip.dart';
 import 'package:repmind/core/widgets/primary_button.dart';
 import 'package:repmind/core/widgets/repmind_text_field.dart';
 import 'package:repmind/core/widgets/selectable_card.dart';
+import 'package:repmind/core/widgets/square_icon_button.dart';
 import 'package:repmind/core/widgets/stat_tile.dart';
 import 'package:repmind/core/widgets/tag_badge.dart';
 
@@ -147,5 +148,76 @@ void main() {
     await pumpThemed(tester, const RepmindTextField(label: 'Email'));
 
     expect(find.byType(IconButton), findsNothing);
+  });
+
+  testWidgets('PrimaryButton ai variant is violet with a sparkle', (
+    tester,
+  ) async {
+    await pumpThemed(
+      tester,
+      PrimaryButton(
+        label: 'Generate my plan',
+        variant: PrimaryButtonVariant.ai,
+        onPressed: () {},
+      ),
+    );
+
+    final style = tester.widget<FilledButton>(find.byType(FilledButton)).style!;
+    expect(
+      style.backgroundColor!.resolve(<WidgetState>{}),
+      RepmindColors.light.violet,
+    );
+    expect(
+      style.foregroundColor!.resolve(<WidgetState>{}),
+      RepmindColors.light.onViolet,
+    );
+    expect(find.byIcon(Icons.auto_awesome_rounded), findsOneWidget);
+    expect(find.text('Generate my plan'), findsOneWidget);
+  });
+
+  testWidgets('SquareIconButton ai variant uses the violet tint', (
+    tester,
+  ) async {
+    await pumpThemed(
+      tester,
+      SquareIconButton(
+        icon: Icons.auto_awesome_rounded,
+        tooltip: 'Adjust plan',
+        ai: true,
+        onPressed: () {},
+      ),
+    );
+
+    final icon = tester.widget<Icon>(find.byIcon(Icons.auto_awesome_rounded));
+    final material = tester.widget<Material>(
+      find
+          .ancestor(
+            of: find.byIcon(Icons.auto_awesome_rounded),
+            matching: find.byType(Material),
+          )
+          .first,
+    );
+    expect(icon.color, RepmindColors.light.violet);
+    expect(material.color, RepmindColors.light.violetTint);
+  });
+
+  testWidgets('RepmindTextField supports multi-line input with a limit', (
+    tester,
+  ) async {
+    await pumpThemed(
+      tester,
+      const RepmindTextField(
+        label: 'Instruction',
+        minLines: 3,
+        maxLines: 5,
+        maxLength: 200,
+      ),
+    );
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.minLines, 3);
+    expect(field.maxLines, 5);
+    expect(field.maxLength, 200);
+    expect(find.text('0/200'), findsOneWidget);
   });
 }
