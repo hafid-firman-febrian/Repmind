@@ -1,4 +1,4 @@
-package com.example.voltry
+package dev.repmind.app
 
 import io.flutter.embedding.android.FlutterActivity
 

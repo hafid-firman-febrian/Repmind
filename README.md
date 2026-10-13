@@ -1,6 +1,6 @@
-# voltry
+# Repmind
 
-A new Flutter project.
+AI fitness coach built with Flutter and Supabase.
 
 ## Getting Started
 

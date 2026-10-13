@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Repmind visual direction</title>
+<style>
+  :root { --bg-primary: #ECEEEA; --bg-secondary: #FFFFFF; --bg-tertiary: #E2E5E0; --border: #D5D8D2; --text-primary: #1B1E24; --text-secondary: #6B6F78; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg-primary); color: var(--text-primary); font-family: system-ui, -apple-system, sans-serif; line-height: 1.5; padding: 32px; }
+  h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; text-align: center; }
+  .subtitle { color: var(--text-secondary); margin-bottom: 1.5rem; text-align: center; }
+</style>
+</head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  .rm-board { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; padding: 28px 12px; background: var(--bg-tertiary); border-radius: 12px; }
+  .rm-label { text-align: center; margin-top: 14px; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); }
+  .rm-note { margin-top: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); }
+  .rm-tokens { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; margin-top: 1.5rem; }
+  .rm-token { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--bg-secondary); border: 1px solid var(--border); }
+  .rm-token i { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); flex-shrink: 0; }
+  .rm-token b { display: block; font-size: 0.85rem; }
+  .rm-token span { font-size: 0.75rem; color: var(--text-secondary); }
+
+  .rm-phone {
+    --bg: #F6F7F5; --sf: #FFFFFF; --sf2: #EEF0EC; --line: #E3E5E1; --tx: #1B1E24; --mu: #6B6F78;
+    --lime: #D4FF3A; --lime-ink: #4D7000; --violet: #6C4DFF; --violet-tint: #EFEBFF; --violet-line: #DCD4FF;
+    --orange: #FF6B1A; --orange-mark: #F25A0F; --dim: #8E929A;
+    --r-hero: 16px; --r-card: 14px; --r-row: 12px; --r-badge: 8px; --r-chip: 8px; --r-btn: 12px; --r-nav: 20px; --r-act: 14px;
+    --fd: 'Barlow Condensed', sans-serif; --fb: 'Barlow', sans-serif;
+    width: 268px; height: 640px; border-radius: 40px; background: var(--bg); color: var(--tx);
+    position: relative; overflow: hidden; padding: 14px 16px 0; text-align: left;
+    font-family: var(--fb); box-shadow: 0 0 0 7px #DADDD8, 0 20px 40px rgba(27,30,36,.14);
+  }
+  .rm-status { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; margin-bottom: 14px; }
+
+  .rm-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .rm-av { width: 36px; height: 36px; border-radius: 50%; background: var(--sf2); border: 1px solid var(--line);
+           display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+  .rm-greet small { display: block; font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--mu); font-weight: 600; }
+  .rm-greet b { font-size: 15px; font-weight: 700; }
+  .rm-streak { margin-left: auto; display: flex; align-items: center; gap: 5px; background: var(--orange); color: var(--tx);
+               border-radius: var(--r-chip); padding: 6px 10px; font-weight: 700; font-size: 12px; }
+  .rm-streak svg { width: 13px; height: 13px; }
+
+  .rm-hero { background: var(--lime); color: var(--tx); border-radius: var(--r-hero); padding: 14px 16px 16px;
+             position: relative; overflow: hidden; margin-bottom: 12px; box-shadow: inset 0 0 0 1px rgba(27,30,36,.06); }
+  .rm-num { position: absolute; right: -4px; top: -20px; font-family: var(--fd); font-weight: 800; font-size: 124px; line-height: 1; opacity: .12; }
+  .rm-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; font-weight: 700; letter-spacing: .08em;
+             text-transform: uppercase; padding: 5px 9px; border-radius: var(--r-chip); background: #FFFFFF; color: var(--tx); position: relative; }
+  .rm-pill svg { width: 10px; height: 10px; color: var(--violet); }
+  .rm-title { font-family: var(--fd); font-weight: 800; font-size: 36px; line-height: .92; text-transform: uppercase; margin: 10px 0 6px; position: relative; }
+  .rm-title.sm { font-size: 30px; margin: 9px 0 9px; }
+  .rm-meta { font-size: 10.5px; font-weight: 600; opacity: .8; position: relative; }
+  .rm-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; position: relative; }
+  .rm-seg { display: flex; gap: 4px; }
+  .rm-seg i { width: 18px; height: 4px; border-radius: 2px; background: currentColor; opacity: .22; }
+  .rm-seg i.on { opacity: 1; }
+  .rm-play { width: 42px; height: 42px; border-radius: var(--r-btn); background: #FFFFFF; color: var(--tx); display: grid; place-items: center; }
+  .rm-play svg { width: 16px; height: 16px; margin-left: 2px; }
+  .rm-chips { display: flex; gap: 6px; }
+  .rm-chip { font-size: 10px; font-weight: 700; padding: 4px 9px; border-radius: var(--r-chip); background: rgba(27,30,36,.08); }
+
+  .rm-card { background: var(--sf); border: 1px solid var(--line); border-radius: var(--r-card); padding: 12px 14px; margin-bottom: 12px; }
+  .rm-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .rm-row b { font-size: 12.5px; font-weight: 700; }
+  .rm-row span { font-size: 10px; color: var(--mu); }
+  .rm-week { display: flex; justify-content: space-between; }
+  .rm-day { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 9px; font-weight: 700; color: var(--mu); }
+  .rm-dot { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; }
+  .rm-dot.done { background: var(--lime); color: var(--tx); box-shadow: inset 0 0 0 1px rgba(27,30,36,.08); }
+  .rm-dot.done svg { width: 13px; height: 13px; }
+  .rm-dot.today { border: 2px solid var(--lime-ink); }
+  .rm-dot.today::after { content: ''; width: 7px; height: 7px; border-radius: 2px; background: var(--lime-ink); }
+  .rm-dot.plan { background: var(--sf2); }
+  .rm-dot.rest::after { content: ''; width: 4px; height: 4px; border-radius: 50%; background: #C9CCC6; }
+
+  .rm-coach-tip { display: flex; align-items: center; gap: 10px; border-radius: var(--r-card); padding: 12px 14px; background: var(--violet); color: #FFFFFF; }
+  .rm-coach-tip .ic { width: 30px; height: 30px; border-radius: 9px; background: rgba(255,255,255,.2); display: grid; place-items: center; flex-shrink: 0; }
+  .rm-coach-tip .ic svg { width: 14px; height: 14px; }
+  .rm-coach-tip b { display: block; font-size: 11.5px; font-weight: 700; margin-bottom: 2px; }
+  .rm-coach-tip p { font-size: 10px; color: rgba(255,255,255,.85); line-height: 1.35; margin: 0; }
+  .rm-coach-tip .chev { width: 14px; height: 14px; margin-left: auto; flex-shrink: 0; }
+
+  .rm-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .rm-top h1 { font-family: var(--fd); font-weight: 800; font-size: 28px; line-height: 1; text-transform: uppercase; margin: 0; }
+  .rm-iconbtn { width: 36px; height: 36px; border-radius: var(--r-btn); border: 1px solid var(--violet-line); background: var(--violet-tint);
+                display: grid; place-items: center; color: var(--violet); }
+  .rm-iconbtn svg { width: 15px; height: 15px; }
+  .rm-sec { font-family: var(--fd); font-weight: 700; font-size: 15px; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; color: var(--mu); }
+  .rm-list { display: flex; flex-direction: column; gap: 7px; }
+  .rm-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r-row); background: var(--sf); border: 1px solid var(--line); }
+  .rm-item.today { border: 1.5px solid var(--lime-ink); }
+  .rm-badge { width: 32px; height: 32px; border-radius: var(--r-badge); background: var(--sf2); display: grid; place-items: center;
+              font-family: var(--fd); font-weight: 800; font-size: 14px; flex-shrink: 0; }
+  .rm-badge svg { width: 14px; height: 14px; }
+  .rm-item.done .rm-badge { background: var(--lime); box-shadow: inset 0 0 0 1px rgba(27,30,36,.08); }
+  .rm-item.today .rm-badge { background: var(--lime); box-shadow: inset 0 0 0 1px rgba(27,30,36,.08); }
+  .rm-item b { display: block; font-size: 12px; font-weight: 700; }
+  .rm-item small { font-size: 10px; color: var(--mu); font-weight: 500; }
+  .rm-tag { margin-left: auto; font-size: 10px; font-weight: 700; color: var(--mu); }
+  .rm-tag.done { color: var(--lime-ink); }
+  .rm-tag.today { background: var(--lime); color: var(--tx); padding: 3px 8px; border-radius: var(--r-chip); text-transform: uppercase; letter-spacing: .04em; font-size: 9px; }
+
+  .rm-chat-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .rm-chat-head .ava { width: 36px; height: 36px; border-radius: 10px; background: var(--violet); color: #FFFFFF; display: grid; place-items: center; }
+  .rm-chat-head .ava svg { width: 16px; height: 16px; }
+  .rm-chat-head h1 { font-family: var(--fd); font-weight: 800; font-size: 26px; line-height: 1; text-transform: uppercase; margin: 0; }
+  .rm-chat-head small { font-size: 10px; color: var(--mu); font-weight: 600; }
+  .rm-context { display: inline-flex; align-items: center; gap: 5px; font-size: 9.5px; font-weight: 700; padding: 5px 9px; border-radius: var(--r-chip);
+                background: var(--violet-tint); color: var(--violet); margin-bottom: 10px; }
+  .rm-context svg { width: 10px; height: 10px; }
+  .rm-msgs { display: flex; flex-direction: column; gap: 8px; }
+  .rm-msg { max-width: 82%; font-size: 11px; line-height: 1.4; padding: 9px 11px; border-radius: 12px; }
+  .rm-msg.user { align-self: flex-end; background: var(--lime); border-bottom-right-radius: 4px; box-shadow: inset 0 0 0 1px rgba(27,30,36,.06); }
+  .rm-msg.ai { align-self: flex-start; background: var(--sf); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+  .rm-msg.ai b { font-weight: 700; }
+  .rm-typing { display: inline-flex; gap: 3px; margin-left: 4px; vertical-align: middle; }
+  .rm-typing i { width: 4px; height: 4px; border-radius: 50%; background: var(--violet); opacity: .5; }
+  .rm-typing i:first-child { opacity: 1; }
+  .rm-input { position: absolute; left: 16px; right: 16px; bottom: 86px; display: flex; gap: 8px; }
+  .rm-input div { flex: 1; height: 40px; border-radius: var(--r-btn); background: var(--sf); border: 1px solid var(--line); display: flex; align-items: center; padding: 0 12px; font-size: 11px; color: var(--mu); }
+  .rm-input span { width: 40px; height: 40px; border-radius: var(--r-btn); background: var(--violet); color: #FFFFFF; display: grid; place-items: center; }
+  .rm-input span svg { width: 16px; height: 16px; }
+
+  .rm-toggle { display: flex; padding: 3px; border-radius: 10px; background: var(--sf); border: 1px solid var(--line); }
+  .rm-toggle span { font-size: 10px; font-weight: 700; padding: 5px 10px; border-radius: 7px; color: var(--mu); }
+  .rm-toggle span.on { background: var(--sf2); color: var(--tx); }
+  .rm-pg-hero { display: flex; align-items: center; justify-content: space-between; }
+  .rm-big { font-family: var(--fd); font-weight: 800; font-size: 54px; line-height: .9; margin-top: 8px; }
+  .rm-sub { font-size: 10.5px; font-weight: 600; opacity: .75; margin-top: 4px; }
+  .rm-ring { position: relative; width: 76px; height: 76px; }
+  .rm-ring svg { width: 76px; height: 76px; transform: rotate(-90deg); }
+  .rm-ring div { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+  .rm-ring b { font-family: var(--fd); font-weight: 800; font-size: 24px; line-height: 1; display: block; }
+  .rm-ring small { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; display: block; }
+  .rm-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .rm-tile { background: var(--sf); border: 1px solid var(--line); border-radius: var(--r-card); padding: 10px 12px; }
+  .rm-tile .v { font-family: var(--fd); font-weight: 800; font-size: 26px; line-height: 1; }
+  .rm-tile .v small { font-size: .5em; margin-left: 2px; color: var(--mu); }
+  .rm-tile .l { font-size: 9.5px; color: var(--mu); font-weight: 600; margin-top: 4px; }
+  .rm-tile.hl { background: var(--orange); border-color: transparent; }
+  .rm-tile.hl .v small, .rm-tile.hl .l { color: rgba(27,30,36,.72); }
+  .rm-chart { background: var(--sf); border: 1px solid var(--line); border-radius: var(--r-card); padding: 11px 12px 10px; }
+  .rm-chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .rm-chart-head b { font-size: 12px; font-weight: 700; }
+  .rm-chart-head span { font-size: 9.5px; color: var(--mu); }
+  .rm-plot { height: 96px; display: flex; align-items: flex-end; justify-content: space-around; border-bottom: 1px solid #C9CCC6; position: relative; margin-top: 14px; }
+  .rm-col { width: 24px; position: relative; }
+  .rm-col i { display: block; width: 100%; background: var(--dim); border-radius: 4px 4px 0 0; }
+  .rm-col.cur i { background: var(--orange-mark); }
+  .rm-col .val { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); font-size: 9.5px; font-weight: 700; white-space: nowrap; }
+  .rm-xlabels { display: flex; justify-content: space-around; margin-top: 5px; }
+  .rm-xlabels span { width: 24px; text-align: center; font-size: 9px; font-weight: 700; color: var(--mu); }
+  .rm-xlabels span.cur { color: var(--tx); }
+  .rm-breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--line); }
+  .rm-breakdown div { display: flex; justify-content: space-between; font-size: 10px; color: var(--mu); font-weight: 600; }
+  .rm-breakdown b { color: var(--tx); font-weight: 700; }
+
+  .rm-nav { position: absolute; left: 16px; right: 16px; bottom: 18px; height: 56px; border-radius: var(--r-nav);
+            background: rgba(255,255,255,.92); border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(27,30,36,.08);
+            display: flex; align-items: center; justify-content: space-around; padding: 0 8px; }
+  .rm-nav svg { width: 19px; height: 19px; color: var(--mu); }
+  .rm-nav .act { width: 44px; height: 44px; border-radius: var(--r-act); display: grid; place-items: center; box-shadow: inset 0 0 0 1px rgba(27,30,36,.08); }
+  .rm-nav .act.lime { background: var(--lime); }
+  .rm-nav .act.lime svg, .rm-nav .act.orange svg { color: var(--tx); }
+  .rm-nav .act.violet { background: var(--violet); }
+  .rm-nav .act.violet svg { color: #FFFFFF; }
+  .rm-nav .act.orange { background: var(--orange); }
+</style>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 20v-8M12 20V4M19 20v-11"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l12.5-7.5z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c.8 3.6 5 5.4 5 11a5 5 0 0 1-10 0c0-2.8 1.6-4.3 2.2-6.6 1.3 1 2 2.4 2.2 3.6C12.6 7.6 12.8 4.8 12 2z"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c.6 4.8 2.2 7.4 10 10-7.8 2.6-9.4 5.2-10 10-.6-4.8-2.2-7.4-10-10 7.8-2.6 9.4-5.2 10-10z"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></symbol>
+</svg>
+
+<h2>Repmind: arah visual final</h2>
+<p class="subtitle">Target visual app (mockup brainstorming, disetujui owner 2026-10-09). Layar Home, Plan, Coach, dan Progress.</p>
+
+<div class="rm-board">
+
+  <div>
+    <div class="rm-phone">
+      <div class="rm-status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="rm-head">
+        <div class="rm-av">A</div>
+        <div class="rm-greet"><small>Good morning</small><b>Alex</b></div>
+        <div class="rm-streak"><svg><use href="#i-flame"/></svg>5</div>
+      </div>
+      <div class="rm-hero">
+        <div class="rm-num">02</div>
+        <span class="rm-pill"><svg><use href="#i-spark"/></svg>AI plan · Day 2 of 4</span>
+        <div class="rm-title">Upper Body<br>Push</div>
+        <div class="rm-meta">6 exercises · ~45 min · Dumbbells</div>
+        <div class="rm-foot">
+          <div class="rm-seg"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+          <div class="rm-play"><svg><use href="#i-play"/></svg></div>
+        </div>
+      </div>
+      <div class="rm-card">
+        <div class="rm-row"><b>This week</b><span>1 of 4 done</span></div>
+        <div class="rm-week">
+          <div class="rm-day">M<div class="rm-dot done"><svg><use href="#i-check"/></svg></div></div>
+          <div class="rm-day">T<div class="rm-dot today"></div></div>
+          <div class="rm-day">W<div class="rm-dot rest"></div></div>
+          <div class="rm-day">T<div class="rm-dot plan"></div></div>
+          <div class="rm-day">F<div class="rm-dot rest"></div></div>
+          <div class="rm-day">S<div class="rm-dot plan"></div></div>
+          <div class="rm-day">S<div class="rm-dot rest"></div></div>
+        </div>
+      </div>
+      <div class="rm-coach-tip">
+        <div class="ic"><svg><use href="#i-spark"/></svg></div>
+        <div><b>Coach tip</b><p>You nailed Monday. Try +1 rep on push-ups today.</p></div>
+        <svg class="chev"><use href="#i-chev"/></svg>
+      </div>
+      <div class="rm-nav">
+        <div class="act lime"><svg><use href="#i-home"/></svg></div>
+        <svg><use href="#i-cal"/></svg><svg><use href="#i-chat"/></svg><svg><use href="#i-chart"/></svg>
+      </div>
+    </div>
+    <div class="rm-label">Home</div>
+  </div>
+
+  <div>
+    <div class="rm-phone">
+      <div class="rm-status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="rm-top">
+        <h1>Your Plan</h1>
+        <div class="rm-iconbtn"><svg><use href="#i-spark"/></svg></div>
+      </div>
+      <div class="rm-hero">
+        <span class="rm-pill"><svg><use href="#i-spark"/></svg>Generated by AI · v2</span>
+        <div class="rm-title sm">4-Day Upper / Lower</div>
+        <div class="rm-chips"><span class="rm-chip">Build muscle</span><span class="rm-chip">Intermediate</span></div>
+      </div>
+      <div class="rm-sec">Week schedule</div>
+      <div class="rm-list">
+        <div class="rm-item done">
+          <div class="rm-badge"><svg><use href="#i-check"/></svg></div>
+          <div><b>Lower Body Power</b><small>Lower · 5 exercises</small></div>
+          <span class="rm-tag done">Done</span>
+        </div>
+        <div class="rm-item today">
+          <div class="rm-badge">D2</div>
+          <div><b>Upper Body Push</b><small>Upper · 6 exercises</small></div>
+          <span class="rm-tag today">Today</span>
+        </div>
+        <div class="rm-item">
+          <div class="rm-badge">D3</div>
+          <div><b>Legs &amp; Core</b><small>Core · 5 exercises</small></div>
+          <span class="rm-tag">Thu</span>
+        </div>
+        <div class="rm-item">
+          <div class="rm-badge">D4</div>
+          <div><b>Full Body Burn</b><small>Full body · 6 exercises</small></div>
+          <span class="rm-tag">Sat</span>
+        </div>
+      </div>
+      <div class="rm-nav">
+        <svg><use href="#i-home"/></svg>
+        <div class="act lime"><svg><use href="#i-cal"/></svg></div>
+        <svg><use href="#i-chat"/></svg><svg><use href="#i-chart"/></svg>
+      </div>
+    </div>
+    <div class="rm-label">Plan</div>
+  </div>
+
+  <div>
+    <div class="rm-phone">
+      <div class="rm-status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="rm-chat-head">
+        <div class="ava"><svg><use href="#i-spark"/></svg></div>
+        <div><h1>Coach</h1><small>Knows your goal and plan</small></div>
+      </div>
+      <span class="rm-context"><svg><use href="#i-spark"/></svg>Using plan v2 · Build muscle</span>
+      <div class="rm-msgs">
+        <div class="rm-msg user">My shoulder feels tight. Should I skip overhead press today?</div>
+        <div class="rm-msg ai">Don't skip the session. Swap <b>overhead press</b> for <b>landmine press</b>, 3 × 10. It's easier on the shoulder. Keep the rest of Upper Body Push as planned.</div>
+        <div class="rm-msg user">Ok. How heavy should I go?</div>
+        <div class="rm-msg ai">Start around 60% of your usual press weight and stop if the pain<span class="rm-typing"><i></i><i></i><i></i></span></div>
+      </div>
+      <div class="rm-input">
+        <div>Ask your coach…</div>
+        <span><svg><use href="#i-send"/></svg></span>
+      </div>
+      <div class="rm-nav">
+        <svg><use href="#i-home"/></svg><svg><use href="#i-cal"/></svg>
+        <div class="act violet"><svg><use href="#i-chat"/></svg></div>
+        <svg><use href="#i-chart"/></svg>
+      </div>
+    </div>
+    <div class="rm-label">Coach</div>
+  </div>
+
+  <div>
+    <div class="rm-phone">
+      <div class="rm-status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="rm-top">
+        <h1>Progress</h1>
+        <div class="rm-toggle"><span>Week</span><span class="on">Month</span></div>
+      </div>
+      <div class="rm-hero rm-pg-hero">
+        <div>
+          <span class="rm-pill">This month</span>
+          <div class="rm-big">86%</div>
+          <div class="rm-sub">12 of 14 sessions</div>
+        </div>
+        <div class="rm-ring">
+          <svg viewBox="0 0 76 76"><circle cx="38" cy="38" r="31" fill="none" stroke="rgba(27,30,36,.14)" stroke-width="7"/><circle cx="38" cy="38" r="31" fill="none" stroke="#1B1E24" stroke-width="7" stroke-linecap="round" stroke-dasharray="139 195"/></svg>
+          <div><span><b>5</b><small>day<br>streak</small></span></div>
+        </div>
+      </div>
+      <div class="rm-tiles">
+        <div class="rm-tile hl"><div class="v">19.6<small>k kg</small></div><div class="l">Volume · +12% vs last month</div></div>
+        <div class="rm-tile"><div class="v">48<small>min</small></div><div class="l">Avg session</div></div>
+      </div>
+      <div class="rm-chart">
+        <div class="rm-chart-head"><b>Weekly volume</b><span>tons</span></div>
+        <div class="rm-plot">
+          <div class="rm-col"><i style="height:77px"></i></div>
+          <div class="rm-col"><i style="height:83px"></i></div>
+          <div class="rm-col"><i style="height:72px"></i></div>
+          <div class="rm-col"><i style="height:90px"></i></div>
+          <div class="rm-col cur"><span class="val">4.5t</span><i style="height:96px"></i></div>
+        </div>
+        <div class="rm-xlabels"><span>W1</span><span>W2</span><span>W3</span><span>W4</span><span class="cur">W5</span></div>
+        <div class="rm-breakdown">
+          <div>Upper <b>1.5t</b></div><div>Lower <b>1.7t</b></div>
+          <div>Core <b>0.6t</b></div><div>Full body <b>0.7t</b></div>
+        </div>
+      </div>
+      <div class="rm-nav">
+        <svg><use href="#i-home"/></svg><svg><use href="#i-cal"/></svg><svg><use href="#i-chat"/></svg>
+        <div class="act orange"><svg><use href="#i-chart"/></svg></div>
+      </div>
+    </div>
+    <div class="rm-label">Progress</div>
+  </div>
+
+</div>
+
+<div class="rm-tokens">
+  <div class="rm-token"><i style="background:#D4FF3A"></i><div><b>lime #D4FF3A</b><span>Latihan dan aksi: kartu utama, hari selesai, tab Home/Plan</span></div></div>
+  <div class="rm-token"><i style="background:#6C4DFF"></i><div><b>violet #6C4DFF</b><span>Semua yang dibuat AI: ikon sparkle, Coach tip, chat, tab Coach</span></div></div>
+  <div class="rm-token"><i style="background:#FF6B1A"></i><div><b>orange #FF6B1A</b><span>Progres: streak, tile statistik, minggu berjalan di chart, tab Progress</span></div></div>
+  <div class="rm-token"><i style="background:#F6F7F5"></i><div><b>background #F6F7F5</b><span>Latar layar, abu-abu dingin</span></div></div>
+  <div class="rm-token"><i style="background:#1B1E24"></i><div><b>ink #1B1E24</b><span>Teks utama, bukan hitam pekat</span></div></div>
+  <div class="rm-token"><i style="background:#4D7000"></i><div><b>limeInk #4D7000</b><span>Teks dan ikon keluarga lime di atas putih</span></div></div>
+</div>
+
+<p class="rm-note">Tab aktif navbar mengikuti peran warna: Home dan Plan lime, Coach ungu, Progress oranye. Di chat, pesan user berwarna lime dan jawaban coach berupa kartu putih, dengan titik ungu saat jawaban sedang di-stream.</p>
+
+</body></html>
