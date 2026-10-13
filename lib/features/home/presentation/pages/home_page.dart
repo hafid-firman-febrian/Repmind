@@ -51,15 +51,24 @@ class HomePage extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      greetingFor(DateTime.now()).toUpperCase(),
-                      style: text.label.copyWith(color: colors.muted),
-                    ),
-                    Text(profile.displayName ?? 'there', style: text.subtitle),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        greetingFor(DateTime.now()).toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: text.label.copyWith(color: colors.muted),
+                      ),
+                      Text(
+                        profile.displayName ?? 'there',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: text.subtitle,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
