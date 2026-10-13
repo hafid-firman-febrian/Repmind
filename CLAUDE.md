@@ -90,7 +90,9 @@ Tiap sub-project punya spec dan plan sendiri di `docs/superpowers/`.
 
 ### Git
 
-- Satu branch per sub-project (misalnya `feat/foundation`), lalu PR ke `main`
+- `main` berisi versi stabil, `dev` tempat integrasi
+- Satu branch fitur per sub-project dibuat dari `dev` (misalnya `feat/workout-generator`), lalu di-merge ke `dev` secara lokal dengan `git merge --no-ff`
+- `dev` di-merge ke `main` secara lokal dengan `git merge --no-ff` setelah satu sub-project selesai dan skenario demonya berjalan
 - Conventional commits: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`
 - **Jangan tambahkan `Co-Authored-By` atau atribusi Claude apa pun** di pesan commit maupun deskripsi PR
 - Jangan pernah meng-commit atau mem-push isi `docs/superpowers/`
