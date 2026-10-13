@@ -11,12 +11,16 @@ class AvatarUploadController extends _$AvatarUploadController {
   @override
   FutureOr<void> build() {}
 
-  Future<void> pickAndUpload() async {
-    if (state.isLoading) return;
+  var _isPicking = false;
 
+  Future<void> pickAndUpload() async {
+    if (state.isLoading || _isPicking) return;
+
+    _isPicking = true;
     final picked = await AsyncValue.guard(
       () => runGuarded(ref.read(avatarPickerProvider).pickFromGallery),
     );
+    _isPicking = false;
     if (!ref.mounted) return;
     if (picked case AsyncError(:final error, :final stackTrace)) {
       state = AsyncError(error, stackTrace);

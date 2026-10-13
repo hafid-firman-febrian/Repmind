@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -81,5 +82,28 @@ void main() {
       isA<UnknownFailure>(),
     );
     expect(profile.uploadedAvatars, isEmpty);
+  });
+
+  test('ignores a second pick while the picker is still open', () async {
+    final pending = Completer<Uint8List?>();
+    when(() => picker.pickFromGallery()).thenAnswer((_) => pending.future);
+    final controller = container.read(avatarUploadControllerProvider.notifier);
+
+    final first = controller.pickAndUpload();
+    final second = controller.pickAndUpload();
+    pending.complete(null);
+    await Future.wait([first, second]);
+
+    verify(() => picker.pickFromGallery()).called(1);
+  });
+
+  test('allows picking again after the picker is closed', () async {
+    when(() => picker.pickFromGallery()).thenAnswer((_) async => null);
+    final controller = container.read(avatarUploadControllerProvider.notifier);
+
+    await controller.pickAndUpload();
+    await controller.pickAndUpload();
+
+    verify(() => picker.pickFromGallery()).called(2);
   });
 }
