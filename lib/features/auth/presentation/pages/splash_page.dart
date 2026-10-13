@@ -5,13 +5,17 @@ import '../../../../core/errors/error_mapper.dart';
 import '../../../../core/theme/repmind_decorations.dart';
 import '../../../../core/theme/theme_context.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../core/widgets/secondary_button.dart';
 import '../../../profile/presentation/controllers/profile_controller.dart';
+import '../controllers/auth_controller.dart';
+import '../widgets/auth_snack_bar.dart';
 
 class SplashPage extends ConsumerWidget {
   const SplashPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    listenForAuthSnackBar(context, ref);
     final colors = context.colors;
     final text = context.textStyles;
     final profile = ref.watch(profileControllerProvider);
@@ -53,6 +57,13 @@ class SplashPage extends ConsumerWidget {
                 PrimaryButton(
                   label: 'Try again',
                   onPressed: () => ref.invalidate(profileControllerProvider),
+                ),
+                const SizedBox(height: 12),
+                SecondaryButton(
+                  label: 'Sign out',
+                  isLoading: ref.watch(authControllerProvider).isLoading,
+                  onPressed: () =>
+                      ref.read(authControllerProvider.notifier).signOut(),
                 ),
               ],
             ],
