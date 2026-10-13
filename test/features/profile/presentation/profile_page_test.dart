@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:repmind/core/errors/app_exception.dart';
+import 'package:repmind/core/widgets/selectable_card.dart';
 import 'package:repmind/features/auth/data/repositories/auth_repository.dart';
 import 'package:repmind/features/profile/data/data_sources/avatar_picker.dart';
+import 'package:repmind/features/profile/domain/models/ai_model.dart';
 import 'package:repmind/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:repmind/features/profile/presentation/pages/profile_page.dart';
 import 'package:repmind/features/profile/presentation/widgets/profile_avatar.dart';
@@ -179,5 +181,59 @@ void main() {
     profile.pendingUploads.single.complete();
     await tester.pump();
     semantics.dispose();
+  });
+
+  Future<FakeProfileController> pumpForAiModel(WidgetTester tester) async {
+    final profile = FakeProfileController(sampleProfile());
+    await pumpPage(
+      tester,
+      const ProfilePage(),
+      overrides: [
+        profileControllerProvider.overrideWith(() => profile),
+        authRepositoryProvider.overrideWithValue(MockAuthRepository()),
+      ],
+    );
+    await tester.pump();
+    await tester.scrollUntilVisible(find.text('AI model'), 200);
+    return profile;
+  }
+
+  Future<void> chooseModel(WidgetTester tester, String label) async {
+    await tester.tap(find.text('AI model'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(SelectableCard, label));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('shows the AI model in the profile details', (tester) async {
+    await pumpForAiModel(tester);
+
+    expect(find.text('AI model'), findsOneWidget);
+    expect(find.text('Gemini 3.8 Flash'), findsOneWidget);
+  });
+
+  testWidgets('choosing another model saves it', (tester) async {
+    final profile = await pumpForAiModel(tester);
+
+    await chooseModel(tester, 'Gemini 3.1 Pro');
+
+    expect(profile.updatedAiModels, [AiModel.geminiPro]);
+  });
+
+  testWidgets('keeping the current model saves nothing', (tester) async {
+    final profile = await pumpForAiModel(tester);
+
+    await chooseModel(tester, 'Gemini 3.8 Flash');
+
+    expect(profile.updatedAiModels, isEmpty);
+  });
+
+  testWidgets('a failed save shows a message', (tester) async {
+    final profile = await pumpForAiModel(tester);
+    profile.aiModelError = const NetworkFailure();
+
+    await chooseModel(tester, 'Gemini 3.5 Flash-Lite');
+
+    expect(find.text(const NetworkFailure().message), findsOneWidget);
   });
 }

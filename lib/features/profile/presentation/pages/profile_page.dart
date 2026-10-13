@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/error_message.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/repmind_radius.dart';
@@ -14,12 +15,30 @@ import '../../../../core/widgets/square_icon_button.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../auth/presentation/widgets/auth_snack_bar.dart';
 import '../../application/services/profile_rules.dart';
+import '../../domain/models/ai_model.dart';
 import '../controllers/avatar_upload_controller.dart';
 import '../controllers/profile_controller.dart';
+import '../widgets/ai_model_sheet.dart';
 import '../widgets/profile_avatar.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
+
+  Future<void> _pickAiModel(
+    BuildContext context,
+    WidgetRef ref,
+    AiModel current,
+  ) async {
+    final selected = await showAiModelSheet(context, current: current);
+    if (selected == null || selected == current) return;
+    try {
+      await ref
+          .read(profileControllerProvider.notifier)
+          .updateAiModel(selected);
+    } on AppException catch (error) {
+      if (context.mounted) showAppSnackBar(context, error.message);
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -141,6 +160,10 @@ class ProfilePage extends ConsumerWidget {
                       value: '${details.daysPerWeek} days/week',
                     ),
                     _DetailRow(label: 'Equipment', value: equipment),
+                    _AiModelRow(
+                      model: profile.aiModel,
+                      onTap: () => _pickAiModel(context, ref, profile.aiModel),
+                    ),
                     _DetailRow(
                       label: 'Weight',
                       value: ProfileRules.formatWeight(details.weightKg),
@@ -197,6 +220,48 @@ class _DetailRow extends StatelessWidget {
           ),
           Expanded(child: Text(value, style: text.body)),
         ],
+      ),
+    );
+  }
+}
+
+class _AiModelRow extends StatelessWidget {
+  const _AiModelRow({required this.model, required this.onTap});
+
+  final AiModel model;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final text = context.textStyles;
+
+    return Semantics(
+      button: true,
+      label: 'AI model, ${model.label}',
+      onTap: onTap,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(RepmindRadius.listTile),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 96,
+                child: Text(
+                  'AI model',
+                  style: text.body.copyWith(color: colors.muted),
+                ),
+              ),
+              Icon(Icons.auto_awesome_rounded, size: 14, color: colors.violet),
+              const SizedBox(width: 6),
+              Expanded(child: Text(model.label, style: text.body)),
+              Icon(Icons.chevron_right_rounded, size: 20, color: colors.muted),
+            ],
+          ),
+        ),
       ),
     );
   }
