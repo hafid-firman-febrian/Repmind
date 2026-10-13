@@ -7,6 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:repmind/app.dart';
 import 'package:repmind/core/errors/app_exception.dart';
+import 'package:repmind/core/router/app_router.dart';
+import 'package:repmind/core/widgets/repmind_nav_bar.dart';
 import 'package:repmind/features/auth/data/repositories/auth_repository.dart';
 import 'package:repmind/features/auth/domain/models/auth_status.dart';
 import 'package:repmind/features/auth/presentation/controllers/auth_status_provider.dart';
@@ -14,10 +16,16 @@ import 'package:repmind/features/auth/presentation/pages/splash_page.dart';
 import 'package:repmind/features/auth/presentation/pages/welcome_page.dart';
 import 'package:repmind/features/home/presentation/pages/home_page.dart';
 import 'package:repmind/features/onboarding/presentation/pages/onboarding_page.dart';
+import 'package:repmind/features/plan/presentation/controllers/active_plan_controller.dart';
+import 'package:repmind/features/plan/presentation/controllers/plan_generation_controller.dart';
+import 'package:repmind/features/plan/presentation/pages/plan_page.dart';
 import 'package:repmind/features/profile/domain/models/profile_model.dart';
 import 'package:repmind/features/profile/presentation/controllers/profile_controller.dart';
 
+import 'fakes/fake_active_plan_controller.dart';
+import 'fakes/fake_plan_generation_controller.dart';
 import 'fakes/fake_profile_controller.dart';
+import 'fixtures/plan_fixtures.dart';
 import 'fixtures/profile_fixtures.dart';
 import 'helpers/mocks.dart';
 
@@ -34,6 +42,12 @@ void main() {
         overrides: [
           authStatusProvider.overrideWith((ref) => auth),
           profileControllerProvider.overrideWith(() => profile),
+          activePlanControllerProvider.overrideWith(
+            () => FakeActivePlanController(samplePlan()),
+          ),
+          planGenerationControllerProvider.overrideWith(
+            () => FakePlanGenerationController(),
+          ),
           ...extraOverrides,
         ],
         child: const RepmindApp(),
@@ -172,6 +186,48 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.byType(WelcomePage), findsOneWidget);
+  });
+
+  testWidgets('onboarded users get the nav bar and can open the Plan tab', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      auth: Stream.value(AuthStatus.signedIn),
+      profile: FakeProfileController(sampleProfile()),
+    );
+
+    expect(find.byType(HomePage), findsOneWidget);
+    expect(find.byType(RepmindNavBar), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Plan'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.byType(PlanPage), findsOneWidget);
+    expect(find.byType(RepmindNavBar), findsOneWidget);
+  });
+
+  testWidgets('a workout link with an unreadable day explains it is missing', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      auth: Stream.value(AuthStatus.signedIn),
+      profile: FakeProfileController(sampleProfile()),
+    );
+
+    ProviderScope.containerOf(
+      tester.element(find.byType(HomePage)),
+    ).read(appRouterProvider).go('/workout/abc');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(
+      find.text('This workout is no longer in your plan.'),
+      findsOneWidget,
+    );
+    expect(find.byType(RepmindNavBar), findsNothing);
   });
 }
 
