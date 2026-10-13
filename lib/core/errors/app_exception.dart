@@ -37,6 +37,13 @@ final class StorageFailure extends AppException {
     : super('Could not upload the photo. Please try again.');
 }
 
+final class PlanGenerationFailure extends AppException {
+  const PlanGenerationFailure()
+    : super(
+        "The AI couldn't build your plan. Try again or pick another model in Profile.",
+      );
+}
+
 final class UnknownFailure extends AppException {
   const UnknownFailure() : super('Something went wrong. Please try again.');
 }
