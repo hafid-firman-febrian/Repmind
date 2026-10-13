@@ -47,6 +47,7 @@ class _WeekStripDay extends StatelessWidget {
     ].join(', ');
 
     return Semantics(
+      container: true,
       label: label,
       excludeSemantics: true,
       child: Column(
