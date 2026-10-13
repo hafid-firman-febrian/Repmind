@@ -4,6 +4,7 @@ import 'package:repmind/core/theme/repmind_colors.dart';
 import 'package:repmind/core/widgets/hero_card.dart';
 import 'package:repmind/core/widgets/option_chip.dart';
 import 'package:repmind/core/widgets/primary_button.dart';
+import 'package:repmind/core/widgets/repmind_text_field.dart';
 import 'package:repmind/core/widgets/selectable_card.dart';
 import 'package:repmind/core/widgets/stat_tile.dart';
 import 'package:repmind/core/widgets/tag_badge.dart';
@@ -115,5 +116,36 @@ void main() {
 
     await tester.tap(find.text('Dumbbells'));
     expect(tapped, isTrue);
+  });
+  testWidgets('RepmindTextField lets the user reveal a hidden password', (
+    tester,
+  ) async {
+    await pumpThemed(
+      tester,
+      const RepmindTextField(label: 'Password', obscureText: true),
+    );
+
+    bool isObscured() =>
+        tester.widget<EditableText>(find.byType(EditableText)).obscureText;
+
+    expect(isObscured(), isTrue);
+
+    await tester.tap(find.byTooltip('Show password'));
+    await tester.pump();
+
+    expect(isObscured(), isFalse);
+
+    await tester.tap(find.byTooltip('Hide password'));
+    await tester.pump();
+
+    expect(isObscured(), isTrue);
+  });
+
+  testWidgets('RepmindTextField shows no reveal button for plain fields', (
+    tester,
+  ) async {
+    await pumpThemed(tester, const RepmindTextField(label: 'Email'));
+
+    expect(find.byType(IconButton), findsNothing);
   });
 }

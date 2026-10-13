@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/theme_context.dart';
 
-class RepmindTextField extends StatelessWidget {
+class RepmindTextField extends StatefulWidget {
   const RepmindTextField({
     super.key,
     required this.label,
@@ -35,6 +35,21 @@ class RepmindTextField extends StatelessWidget {
   final bool enabled;
 
   @override
+  State<RepmindTextField> createState() => _RepmindTextFieldState();
+}
+
+class _RepmindTextFieldState extends State<RepmindTextField> {
+  late bool _obscured = widget.obscureText;
+
+  @override
+  void didUpdateWidget(RepmindTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.obscureText != widget.obscureText) {
+      _obscured = widget.obscureText;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final text = context.textStyles;
@@ -45,25 +60,37 @@ class RepmindTextField extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 6),
           child: Text(
-            label.toUpperCase(),
+            widget.label.toUpperCase(),
             style: text.label.copyWith(color: colors.muted),
           ),
         ),
         TextFormField(
-          controller: controller,
-          initialValue: initialValue,
-          validator: validator,
-          onChanged: onChanged,
-          keyboardType: keyboardType,
-          textInputAction: textInputAction,
-          obscureText: obscureText,
-          autofillHints: autofillHints,
-          enabled: enabled,
+          controller: widget.controller,
+          initialValue: widget.initialValue,
+          validator: widget.validator,
+          onChanged: widget.onChanged,
+          keyboardType: widget.keyboardType,
+          textInputAction: widget.textInputAction,
+          obscureText: _obscured,
+          autofillHints: widget.autofillHints,
+          enabled: widget.enabled,
           style: text.body,
           decoration: InputDecoration(
-            hintText: hintText,
-            errorText: errorText,
-            suffixText: suffixText,
+            hintText: widget.hintText,
+            errorText: widget.errorText,
+            suffixText: widget.suffixText,
+            suffixIcon: widget.obscureText
+                ? IconButton(
+                    tooltip: _obscured ? 'Show password' : 'Hide password',
+                    icon: Icon(
+                      _obscured
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      color: colors.muted,
+                    ),
+                    onPressed: () => setState(() => _obscured = !_obscured),
+                  )
+                : null,
           ),
         ),
       ],
