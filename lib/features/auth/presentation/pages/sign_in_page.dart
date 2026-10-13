@@ -70,6 +70,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                 controller: _password,
                 obscureText: true,
                 textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _submit(),
                 autofillHints: const [AutofillHints.password],
                 validator: AuthValidators.signInPassword,
               ),

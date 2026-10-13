@@ -83,6 +83,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                     'At least ${AuthValidators.minPasswordLength} characters',
                 obscureText: true,
                 textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _submit(),
                 autofillHints: const [AutofillHints.newPassword],
                 validator: AuthValidators.password,
               ),

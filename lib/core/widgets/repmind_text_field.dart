@@ -12,6 +12,7 @@ class RepmindTextField extends StatefulWidget {
     this.errorText,
     this.validator,
     this.onChanged,
+    this.onFieldSubmitted,
     this.keyboardType,
     this.textInputAction,
     this.obscureText = false,
@@ -27,6 +28,7 @@ class RepmindTextField extends StatefulWidget {
   final String? errorText;
   final String? Function(String?)? validator;
   final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onFieldSubmitted;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final bool obscureText;
@@ -69,6 +71,7 @@ class _RepmindTextFieldState extends State<RepmindTextField> {
           initialValue: widget.initialValue,
           validator: widget.validator,
           onChanged: widget.onChanged,
+          onFieldSubmitted: widget.onFieldSubmitted,
           keyboardType: widget.keyboardType,
           textInputAction: widget.textInputAction,
           obscureText: _obscured,

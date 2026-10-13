@@ -277,4 +277,68 @@ void main() {
     expect(find.byType(SignUpPage), findsOneWidget);
     expect(find.text('Incorrect email or password.'), findsNothing);
   });
+
+  testWidgets('the keyboard Done key submits the sign-in form', (tester) async {
+    when(
+      () => repository.signIn(
+        email: any(named: 'email'),
+        password: any(named: 'password'),
+      ),
+    ).thenAnswer((_) async {});
+    await pumpPage(
+      tester,
+      const SignInPage(),
+      overrides: [authRepositoryProvider.overrideWithValue(repository)],
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('sign-in-email')),
+      'alex@mail.com',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('sign-in-password')),
+      'secret123',
+    );
+
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+
+    verify(
+      () => repository.signIn(email: 'alex@mail.com', password: 'secret123'),
+    ).called(1);
+  });
+
+  testWidgets('the keyboard Done key submits the sign-up form', (tester) async {
+    when(
+      () => repository.signUp(
+        name: any(named: 'name'),
+        email: any(named: 'email'),
+        password: any(named: 'password'),
+      ),
+    ).thenAnswer((_) async {});
+    await pumpPage(
+      tester,
+      const SignUpPage(),
+      overrides: [authRepositoryProvider.overrideWithValue(repository)],
+    );
+    await tester.enterText(find.byKey(const ValueKey('sign-up-name')), 'Alex');
+    await tester.enterText(
+      find.byKey(const ValueKey('sign-up-email')),
+      'alex@mail.com',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('sign-up-password')),
+      'secret123',
+    );
+
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+
+    verify(
+      () => repository.signUp(
+        name: 'Alex',
+        email: 'alex@mail.com',
+        password: 'secret123',
+      ),
+    ).called(1);
+  });
 }
