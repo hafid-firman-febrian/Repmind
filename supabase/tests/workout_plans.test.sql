@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(19);
+select plan(21);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'alice@test.dev'),
@@ -104,6 +104,18 @@ select set_config('request.jwt.claims',
 select is_empty('select id from public.workout_plans', 'another user cannot see the plans');
 select is_empty('select id from public.plan_days', 'another user cannot see the plan days');
 select is_empty('select id from public.plan_exercises', 'another user cannot see the plan exercises');
+
+select lives_ok(
+  $$ select public.save_generated_plan(current_setting('test.plan')::jsonb) $$,
+  'another user can save their own plan');
+
+select set_config('request.jwt.claims',
+  '{"sub": "11111111-1111-1111-1111-111111111111", "role": "authenticated"}', true);
+
+select results_eq(
+  'select version, archived_at is null from public.workout_plans order by version',
+  $$ values (1, false), (2, true) $$,
+  'saving a plan never archives or renumbers another user''s plans');
 
 select set_config('request.jwt.claims',
   '{"sub": "33333333-3333-3333-3333-333333333333", "role": "authenticated"}', true);
