@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:repmind/features/profile/domain/models/ai_model.dart';
 import 'package:repmind/features/profile/domain/models/profile_details.dart';
 import 'package:repmind/features/profile/domain/models/profile_model.dart';
 import 'package:repmind/features/profile/presentation/controllers/profile_controller.dart';
@@ -11,8 +12,10 @@ class FakeProfileController extends ProfileController {
   final Object? loadError;
   Object? saveError;
   Object? avatarError;
+  Object? aiModelError;
   final savedDetails = <(ProfileDetails, bool)>[];
   final uploadedAvatars = <Uint8List>[];
+  final updatedAiModels = <AiModel>[];
 
   @override
   Future<Profile?> build() async {
@@ -36,5 +39,12 @@ class FakeProfileController extends ProfileController {
     final error = avatarError;
     if (error != null) throw error;
     uploadedAvatars.add(bytes);
+  }
+
+  @override
+  Future<void> updateAiModel(AiModel model) async {
+    final error = aiModelError;
+    if (error != null) throw error;
+    updatedAiModels.add(model);
   }
 }
