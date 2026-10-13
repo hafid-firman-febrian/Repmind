@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/errors/error_mapper.dart';
+import '../../../../core/errors/error_message.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/repmind_radius.dart';
 import '../../../../core/theme/theme_context.dart';
+import '../../../../core/widgets/app_snack_bar.dart';
 import '../../../../core/widgets/loading_scaffold.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/secondary_button.dart';
@@ -25,11 +26,7 @@ class ProfilePage extends ConsumerWidget {
     ref.listen(avatarUploadControllerProvider, (_, next) {
       final error = next.error;
       if (next.isLoading || error == null) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(content: Text(mapToAppException(error).message)),
-        );
+      showAppSnackBar(context, messageOf(error));
     });
     listenForAuthSnackBar(context, ref);
 
