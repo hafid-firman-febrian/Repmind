@@ -41,6 +41,10 @@ class ProfilePage extends ConsumerWidget {
     final text = context.textStyles;
     final isUploading = ref.watch(avatarUploadControllerProvider).isLoading;
     final isSigningOut = ref.watch(authControllerProvider).isLoading;
+    final pickPhoto = isUploading
+        ? null
+        : () =>
+              ref.read(avatarUploadControllerProvider.notifier).pickAndUpload();
     final equipment = details.equipment.isEmpty
         ? 'Bodyweight only'
         : details.equipment.map((item) => item.label).join(', ');
@@ -64,39 +68,47 @@ class ProfilePage extends ConsumerWidget {
             Center(
               child: Stack(
                 children: [
-                  ProfileAvatar(
-                    imageUrl: profile.avatarUrl,
-                    name: profile.displayName,
-                    size: 104,
+                  Semantics(
+                    button: true,
+                    label: 'Change photo',
+                    child: GestureDetector(
+                      onTap: pickPhoto,
+                      child: ExcludeSemantics(
+                        child: ProfileAvatar(
+                          imageUrl: profile.avatarUrl,
+                          name: profile.displayName,
+                          size: 104,
+                        ),
+                      ),
+                    ),
                   ),
                   Positioned(
                     right: 0,
                     bottom: 0,
-                    child: Material(
-                      color: colors.ink,
-                      shape: const CircleBorder(),
-                      child: InkWell(
-                        customBorder: const CircleBorder(),
-                        onTap: isUploading
-                            ? null
-                            : () => ref
-                                  .read(avatarUploadControllerProvider.notifier)
-                                  .pickAndUpload(),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: isUploading
-                              ? SizedBox.square(
-                                  dimension: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                    child: Tooltip(
+                      message: 'Change photo',
+                      child: Material(
+                        color: colors.ink,
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: pickPhoto,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: isUploading
+                                ? SizedBox.square(
+                                    dimension: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: colors.surface,
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.photo_camera_rounded,
+                                    size: 18,
                                     color: colors.surface,
                                   ),
-                                )
-                              : Icon(
-                                  Icons.photo_camera_rounded,
-                                  size: 18,
-                                  color: colors.surface,
-                                ),
+                          ),
                         ),
                       ),
                     ),

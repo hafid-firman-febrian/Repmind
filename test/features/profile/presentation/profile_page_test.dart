@@ -9,6 +9,7 @@ import 'package:repmind/features/auth/data/repositories/auth_repository.dart';
 import 'package:repmind/features/profile/data/data_sources/avatar_picker.dart';
 import 'package:repmind/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:repmind/features/profile/presentation/pages/profile_page.dart';
+import 'package:repmind/features/profile/presentation/widgets/profile_avatar.dart';
 
 import '../../../fakes/fake_profile_controller.dart';
 import '../../../fixtures/profile_fixtures.dart';
@@ -122,5 +123,61 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.byType(SnackBar), findsNothing);
+  });
+
+  testWidgets('tapping the large avatar opens the photo picker', (
+    tester,
+  ) async {
+    final picker = MockAvatarPicker();
+    when(() => picker.pickFromGallery()).thenAnswer((_) async => null);
+    await pumpPage(
+      tester,
+      const ProfilePage(),
+      overrides: [
+        profileControllerProvider.overrideWith(
+          () => FakeProfileController(sampleProfile()),
+        ),
+        avatarPickerProvider.overrideWithValue(picker),
+      ],
+    );
+    await tester.pump();
+
+    await tester.tap(find.byType(ProfileAvatar));
+    await tester.pump();
+
+    verify(() => picker.pickFromGallery()).called(1);
+  });
+
+  testWidgets('labels both photo targets and disables them while uploading', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final picker = MockAvatarPicker();
+    when(() => picker.pickFromGallery()).thenAnswer((_) async => Uint8List(1));
+    final profile = _GatedAvatarProfileController(sampleProfile());
+    await pumpPage(
+      tester,
+      const ProfilePage(),
+      overrides: [
+        profileControllerProvider.overrideWith(() => profile),
+        avatarPickerProvider.overrideWithValue(picker),
+      ],
+    );
+    await tester.pump();
+    expect(find.bySemanticsLabel('Change photo'), findsWidgets);
+    expect(find.byTooltip('Change photo'), findsOneWidget);
+
+    await tester.tap(find.byType(ProfileAvatar));
+    await tester.pump();
+    await tester.pump();
+    expect(profile.pendingUploads, hasLength(1));
+
+    await tester.tap(find.byType(ProfileAvatar));
+    await tester.pump();
+
+    verify(() => picker.pickFromGallery()).called(1);
+    profile.pendingUploads.single.complete();
+    await tester.pump();
+    semantics.dispose();
   });
 }
