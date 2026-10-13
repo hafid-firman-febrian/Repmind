@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:repmind/features/home/application/services/greeting.dart';
 import 'package:repmind/features/home/presentation/pages/home_page.dart';
 import 'package:repmind/features/profile/presentation/controllers/profile_controller.dart';
 
@@ -19,6 +20,10 @@ void main() {
     );
     await tester.pump();
 
+    expect(
+      find.text(greetingFor(DateTime.now()).toUpperCase()),
+      findsOneWidget,
+    );
     expect(find.text('Alex'), findsOneWidget);
     expect(find.text('BUILD MUSCLE'), findsOneWidget);
     expect(find.text('Intermediate · 4 days/week'), findsOneWidget);

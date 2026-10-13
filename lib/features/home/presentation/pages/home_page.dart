@@ -55,8 +55,8 @@ class HomePage extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      greetingFor(DateTime.now()),
-                      style: text.bodySmall.copyWith(color: colors.muted),
+                      greetingFor(DateTime.now()).toUpperCase(),
+                      style: text.label.copyWith(color: colors.muted),
                     ),
                     Text(profile.displayName ?? 'there', style: text.subtitle),
                   ],
