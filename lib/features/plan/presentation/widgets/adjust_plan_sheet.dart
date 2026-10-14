@@ -13,6 +13,7 @@ Future<String?> showAdjustPlanSheet(
   context: context,
   isScrollControlled: true,
   useSafeArea: true,
+  useRootNavigator: true,
   builder: (_) => AdjustPlanSheet(currentVersion: currentVersion),
 );
 

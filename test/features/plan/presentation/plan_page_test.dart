@@ -6,8 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:repmind/core/errors/app_exception.dart';
 import 'package:repmind/core/router/app_routes.dart';
+import 'package:repmind/core/router/app_shell.dart';
 import 'package:repmind/core/time/clock_provider.dart';
 import 'package:repmind/core/widgets/option_chip.dart';
+import 'package:repmind/core/widgets/repmind_nav_bar.dart';
 import 'package:repmind/features/auth/presentation/controllers/auth_status_provider.dart';
 import 'package:repmind/features/plan/data/repositories/plan_repository.dart';
 import 'package:repmind/features/plan/domain/models/workout_plan_model.dart';
@@ -134,6 +136,59 @@ void main() {
 
     await tester.tap(find.byTooltip('Adjust plan'));
     await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(OptionChip, 'More core work'));
+    await tester.pump();
+    await tester.tap(find.text('Generate v3'));
+    await tester.pumpAndSettle();
+
+    expect(generation.generateCalls, ['More core work']);
+    expect(find.text('generating'), findsOneWidget);
+  });
+
+  testWidgets('the adjust sheet opens above the nav bar of the shell', (
+    tester,
+  ) async {
+    useTallScreen(tester);
+    generation = FakePlanGenerationController();
+    await pumpRouter(
+      tester,
+      initialLocation: AppRoutes.plan,
+      overrides: [
+        activePlanControllerProvider.overrideWith(
+          () => FakeActivePlanController(samplePlan(version: 2)),
+        ),
+        planGenerationControllerProvider.overrideWith(() => generation),
+        clockProvider.overrideWithValue(() => tuesday),
+      ],
+      routes: [
+        StatefulShellRoute.indexedStack(
+          builder: (_, _, navigationShell) =>
+              AppShell(navigationShell: navigationShell),
+          branches: [
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: AppRoutes.plan,
+                  builder: (_, _) => const PlanPage(),
+                ),
+              ],
+            ),
+          ],
+        ),
+        GoRoute(
+          path: AppRoutes.generating,
+          builder: (_, _) => const Text('generating'),
+        ),
+      ],
+    );
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Adjust plan'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(RepmindNavBar), findsOneWidget);
+    expect(find.text('Generate v3').hitTestable(), findsOneWidget);
+
     await tester.tap(find.widgetWithText(OptionChip, 'More core work'));
     await tester.pump();
     await tester.tap(find.text('Generate v3'));

@@ -87,6 +87,28 @@ void main() {
     expect(results, ['More core work']);
   });
 
+  testWidgets('the button can be scrolled above the keyboard', (tester) async {
+    tester.view.physicalSize = const Size(1080, 1600);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    await pumpSheet(tester);
+
+    tester.view.viewInsets = const FakeViewPadding(bottom: 600);
+    addTearDown(tester.view.resetViewInsets);
+    await tester.pumpAndSettle();
+    await tester.drag(
+      find.byType(SingleChildScrollView),
+      const Offset(0, -1000),
+    );
+    await tester.pumpAndSettle();
+
+    final keyboardTop = (1600 - 600) / 2;
+    final buttonBottom = tester
+        .getBottomLeft(find.widgetWithText(FilledButton, 'Generate v2'))
+        .dy;
+    expect(buttonBottom, lessThanOrEqualTo(keyboardTop));
+  });
+
   testWidgets('closing the sheet returns nothing', (tester) async {
     final results = await pumpSheet(tester);
 
