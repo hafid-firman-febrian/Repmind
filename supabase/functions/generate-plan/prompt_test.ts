@@ -1,6 +1,6 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@^1";
 import { sampleCatalog, sampleProfile } from "./fixtures.ts";
-import { buildPlanPrompt, buildRetryPrompt } from "./prompt.ts";
+import { buildPlanPrompt, buildRetryPrompt, SYSTEM_PROMPT } from "./prompt.ts";
 import type { ActivePlanSummary } from "./types.ts";
 
 const activePlan: ActivePlanSummary = {
@@ -48,7 +48,8 @@ Deno.test("a fresh plan has no adjustment section", () => {
 Deno.test("an adjustment includes the current plan and the request", () => {
   const text = prompt("More core work", activePlan);
   assertStringIncludes(text, "## Current plan");
-  assertStringIncludes(text, "Title: 2-Day Strength Split (version 1)");
+  assertStringIncludes(text, "Version: 1\nTitle: 2-Day Strength Split\n");
+  assertEquals(text.includes("(version"), false);
   assertStringIncludes(text, "push_up 3x12 rest 60s");
   assertStringIncludes(text, "## Requested change\nMore core work");
 });
@@ -61,4 +62,14 @@ Deno.test("the retry prompt lists every problem", () => {
   const text = buildRetryPrompt("base", ["first issue", "second issue"]);
   assert(text.startsWith("base\n"));
   assertStringIncludes(text, "- first issue\n- second issue");
+});
+
+Deno.test("the system prompt states the plan and day title limits", () => {
+  assertStringIncludes(SYSTEM_PROMPT, "at most 40 characters");
+  assertStringIncludes(SYSTEM_PROMPT, "'4-Day Upper / Lower'");
+  assertStringIncludes(SYSTEM_PROMPT, "at most 30 characters");
+});
+
+Deno.test("the system prompt forbids a version number in the plan title", () => {
+  assertStringIncludes(SYSTEM_PROMPT, "never put a version number in it");
 });

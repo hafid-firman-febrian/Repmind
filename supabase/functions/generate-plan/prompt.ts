@@ -11,7 +11,8 @@ export const SYSTEM_PROMPT = [
   "Only use exercise_id values from the catalog you are given. Never invent exercises.",
   "Match volume, sets, reps and rest to the person's goal and level.",
   "Balance muscle groups across the week and avoid training the same muscle group on two consecutive calendar days.",
-  "Give every day a short, specific title such as 'Upper Body Push'.",
+  "Give the plan a short title of at most 40 characters, such as '4-Day Upper / Lower', and never put a version number in it.",
+  "Give every day a short, specific title of at most 30 characters, such as 'Upper Body Push'.",
   "Answer with JSON that matches the response schema exactly.",
 ].join("\n");
 
@@ -81,7 +82,8 @@ function catalogLine(exercise: CatalogExercise): string {
 function describePlan(plan: ActivePlanSummary | null): string[] {
   if (plan === null) return ["None yet."];
   return [
-    `Title: ${plan.title} (version ${plan.version})`,
+    `Version: ${plan.version}`,
+    `Title: ${plan.title}`,
     ...plan.days.map((day) => {
       const exercises = day.exercises
         .map((exercise) =>
