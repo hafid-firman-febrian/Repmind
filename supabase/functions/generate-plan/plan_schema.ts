@@ -57,7 +57,10 @@ function keepSupportedKeywords(node: unknown): unknown {
   if (node === null || typeof node !== "object") return node;
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(node)) {
-    if (!GEMINI_SCHEMA_KEYWORDS.has(key)) continue;
+    if (
+      !GEMINI_SCHEMA_KEYWORDS.has(key) ||
+      (key === "enum" && Array.isArray(value) && value.length > 20)
+    ) continue;
     result[key] = key === "properties"
       ? Object.fromEntries(
         Object.entries(value as Record<string, unknown>).map((

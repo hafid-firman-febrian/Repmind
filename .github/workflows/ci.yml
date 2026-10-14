@@ -29,4 +29,5 @@ jobs:
         with:
           deno-version: v2.x
       - run: deno fmt --check supabase/functions
+      - run: deno check --no-config supabase/functions/generate-plan/index.ts
       - run: deno test --allow-all --no-config supabase/functions/

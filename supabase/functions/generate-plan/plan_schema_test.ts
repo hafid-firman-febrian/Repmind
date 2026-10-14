@@ -23,29 +23,41 @@ Deno.test("rejects unknown exercises, wrong day counts, bad numbers and bad reps
   assertEquals(schema.safeParse(enDash).success, false);
 });
 
-Deno.test("the Gemini schema locks exercise ids and the day count", () => {
-  const schema = toGeminiSchema(planOutputSchema(ids, 4)) as {
+Deno.test("the Gemini schema locks the day count and leaves a large exercise list to zod", () => {
+  const largeCatalogIds = Array.from(
+    { length: 42 },
+    (_, index) => `exercise_${index}`,
+  );
+  const geminiSchema = toGeminiSchema(planOutputSchema(largeCatalogIds, 4)) as {
     properties: {
       days: {
         minItems: number;
         maxItems: number;
         items: {
           properties: {
+            focus: { enum: string[] };
             exercises: {
-              items: { properties: { exercise_id: { enum: string[] } } };
+              items: { properties: { exercise_id: { enum?: string[] } } };
             };
           };
         };
       };
     };
   };
-  const days = schema.properties.days;
+  const days = geminiSchema.properties.days;
+  const foreignExercise = samplePlanOutput();
+  foreignExercise.days[0].exercises[0].exercise_id = "made_up_move";
 
   assertEquals(days.minItems, 4);
   assertEquals(days.maxItems, 4);
   assertEquals(
     days.items.properties.exercises.items.properties.exercise_id.enum,
-    ids,
+    undefined,
+  );
+  assertEquals(days.items.properties.focus.enum.length, 4);
+  assertEquals(
+    planOutputSchema(largeCatalogIds, 2).safeParse(foreignExercise).success,
+    false,
   );
 });
 
