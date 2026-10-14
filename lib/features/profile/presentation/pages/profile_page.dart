@@ -241,25 +241,41 @@ class _AiModelRow extends StatelessWidget {
       label: 'AI model, ${model.label}',
       onTap: onTap,
       excludeSemantics: true,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(RepmindRadius.listTile),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 96,
-                child: Text(
-                  'AI model',
-                  style: text.body.copyWith(color: colors.muted),
-                ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(RepmindRadius.listTile),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: kMinInteractiveDimension,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 96,
+                    child: Text(
+                      'AI model',
+                      style: text.body.copyWith(color: colors.muted),
+                    ),
+                  ),
+                  Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 14,
+                    color: colors.violet,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text(model.label, style: text.body)),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 20,
+                    color: colors.muted,
+                  ),
+                ],
               ),
-              Icon(Icons.auto_awesome_rounded, size: 14, color: colors.violet),
-              const SizedBox(width: 6),
-              Expanded(child: Text(model.label, style: text.body)),
-              Icon(Icons.chevron_right_rounded, size: 20, color: colors.muted),
-            ],
+            ),
           ),
         ),
       ),

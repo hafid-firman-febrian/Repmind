@@ -212,6 +212,24 @@ void main() {
     expect(find.text('Gemini 3.8 Flash'), findsOneWidget);
   });
 
+  testWidgets('the AI model row inks on the card and is tall enough to tap', (
+    tester,
+  ) async {
+    await pumpForAiModel(tester);
+    final row = find
+        .ancestor(of: find.text('AI model'), matching: find.byType(InkWell))
+        .first;
+    final inkSurface = tester.widget<Material>(
+      find.ancestor(of: row, matching: find.byType(Material)).first,
+    );
+
+    expect(inkSurface.type, MaterialType.transparency);
+    expect(
+      tester.getSize(row).height,
+      greaterThanOrEqualTo(kMinInteractiveDimension),
+    );
+  });
+
   testWidgets('choosing another model saves it', (tester) async {
     final profile = await pumpForAiModel(tester);
 
