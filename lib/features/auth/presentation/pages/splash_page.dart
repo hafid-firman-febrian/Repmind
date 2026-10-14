@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/errors/error_mapper.dart';
+import '../../../../core/errors/error_message.dart';
 import '../../../../core/theme/repmind_decorations.dart';
 import '../../../../core/theme/theme_context.dart';
 import '../../../../core/widgets/primary_button.dart';
@@ -22,7 +22,7 @@ class SplashPage extends ConsumerWidget {
     final error = profile.error;
     final errorMessage = profile.isLoading || error == null
         ? null
-        : mapToAppException(error).message;
+        : messageOf(error);
 
     return Scaffold(
       body: Center(

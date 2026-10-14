@@ -7,6 +7,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:repmind/core/errors/app_exception.dart';
 import 'package:repmind/features/auth/presentation/controllers/auth_status_provider.dart';
 import 'package:repmind/features/profile/data/repositories/profile_repository.dart';
+import 'package:repmind/features/profile/domain/models/ai_model.dart';
 import 'package:repmind/features/profile/domain/models/profile_model.dart';
 import 'package:repmind/features/profile/presentation/controllers/profile_controller.dart';
 
@@ -197,4 +198,27 @@ void main() {
       expect(container.read(profileControllerProvider).value, same(current));
     },
   );
+
+  test('updateAiModel saves the choice and replaces the state', () async {
+    when(
+      () => repository.fetchProfile('user-1'),
+    ).thenAnswer((_) async => sampleProfile());
+    when(
+      () => repository.updateAiModel('user-1', AiModel.geminiPro),
+    ).thenAnswer(
+      (_) async =>
+          Profile.fromJson({...profileRow(), 'ai_model': 'gemini_pro'}),
+    );
+    final container = containerFor('user-1');
+    await container.read(profileControllerProvider.future);
+
+    await container
+        .read(profileControllerProvider.notifier)
+        .updateAiModel(AiModel.geminiPro);
+
+    expect(
+      container.read(profileControllerProvider).value!.aiModel,
+      AiModel.geminiPro,
+    );
+  });
 }

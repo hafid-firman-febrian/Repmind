@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(11);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('11111111-1111-1111-1111-111111111111', 'alice@test.dev',
@@ -22,6 +22,11 @@ select is(
   'https://example.com/alice.png',
   'avatar_url is copied from provider metadata');
 
+select is(
+  (select ai_model::text from public.profiles where id = '11111111-1111-1111-1111-111111111111'),
+  'gemini_flash',
+  'new profiles default to Gemini Flash');
+
 set local role authenticated;
 select set_config('request.jwt.claims',
   '{"sub": "11111111-1111-1111-1111-111111111111", "role": "authenticated"}', true);
@@ -34,6 +39,10 @@ select results_eq(
 select isnt_empty(
   $$ update public.profiles set display_name = 'Alice' where id = '11111111-1111-1111-1111-111111111111' returning id $$,
   'a user can update their own profile');
+
+select isnt_empty(
+  $$ update public.profiles set ai_model = 'gemini_pro' where id = '11111111-1111-1111-1111-111111111111' returning id $$,
+  'a user can change their own AI model');
 
 select is_empty(
   $$ update public.profiles set display_name = 'Hacked' where id = '22222222-2222-2222-2222-222222222222' returning id $$,

@@ -6,7 +6,7 @@ Repmind adalah app fitness Flutter dengan AI coach. Pembedanya dua fitur AI: **A
 
 Ini **proyek portofolio untuk Upwork**. Hasil akhirnya repo GitHub, README, dan video demo. App hanya dijalankan oleh owner (tidak ada rilis ke store atau APK publik). Bahasa UI: Inggris. Satuan: metrik. Light mode saja.
 
-Spec lengkap ada di `docs/superpowers/specs/2026-09-30-repmind-design.md`. **Baca sebelum mengerjakan area yang belum kamu kenal.** Decision log D1–D16 di sana menjelaskan alasan tiap keputusan.
+Spec lengkap ada di `docs/superpowers/specs/2026-09-30-repmind-design.md`. **Baca sebelum mengerjakan area yang belum kamu kenal.** Decision log D1–D22 di sana menjelaskan alasan tiap keputusan.
 
 ## Tech Stack
 
@@ -14,7 +14,7 @@ Spec lengkap ada di `docs/superpowers/specs/2026-09-30-repmind-design.md`. **Bac
 - State: Riverpod 3, `Notifier` / `AsyncNotifier` via `@riverpod` (`riverpod_generator`)
 - Routing: go_router, dengan redirect lewat fungsi murni `resolveRedirect`
 - Backend: Supabase (Auth, Postgres + RLS, Storage, Edge Functions Deno/TypeScript)
-- AI: Claude (`claude-opus-5-5`, disimpan di secret `AI_MODEL`), hanya dipanggil dari Edge Functions
+- AI: Gemini lewat `@google/genai` (Interactions API, structured output JSON Schema), hanya dipanggil dari Edge Functions. Model dipilih user di Profile (`profiles.ai_model`) dari allowlist `supabase/functions/_shared/ai_models.ts`, default `gemini-3.8-flash`
 - Model: ditulis manual, **tanpa** Freezed atau json_serializable
 - Styling: Material 3 dengan token Repmind (`ThemeExtension`), font Barlow dan Barlow Condensed sebagai asset
 
@@ -45,7 +45,7 @@ Tiap sub-project punya spec dan plan sendiri di `docs/superpowers/`.
   - `migrations/`: satu-satunya cara mengubah schema
   - `functions/`: `_shared/`, `generate-plan/`, `coach-chat/`
   - `tests/`: pgTAP
-  - `seed.sql`
+  - `seed.sql`: akun demo lokal (`demo@repmind.dev` / `repmind-demo`). Katalog latihan ada di migration, bukan di sini
 - `docs/design/` berisi mockup visual final (target tampilan).
 - `docs/setup/` berisi langkah setup Supabase dan Google sign-in.
 - `docs/superpowers/` berisi spec dan plan. Folder ini di-gitignore dan hanya ada di mesin owner.
@@ -63,7 +63,8 @@ Tiap sub-project punya spec dan plan sendiri di `docs/superpowers/`.
 - `supabase db reset`: jalankan ulang semua migration dan seed di lokal
 - `supabase test db`: test pgTAP (RLS, trigger)
 - `supabase functions serve`: jalankan Edge Functions di lokal
-- `deno test --allow-all supabase/functions/`: test Edge Functions
+- `deno test --allow-all --no-config supabase/functions/`: test Edge Functions (`--no-config` supaya `package.json` atau `deno.json` di folder induk tidak ikut terbaca)
+- `deno fmt supabase/functions`: formatter Edge Functions
 - `supabase db push` / `supabase functions deploy <nama>`: kirim ke project cloud. **Tanya dulu sebelum menjalankan.**
 
 ---
@@ -90,7 +91,9 @@ Tiap sub-project punya spec dan plan sendiri di `docs/superpowers/`.
 
 ### Git
 
-- Satu branch per sub-project (misalnya `feat/foundation`), lalu PR ke `main`
+- `main` berisi versi stabil, `dev` tempat integrasi
+- Satu branch fitur per sub-project dibuat dari `dev` (misalnya `feat/workout-generator`), lalu di-merge ke `dev` secara lokal dengan `git merge --no-ff`
+- `dev` di-merge ke `main` secara lokal dengan `git merge --no-ff` setelah satu sub-project selesai dan skenario demonya berjalan
 - Conventional commits: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`
 - **Jangan tambahkan `Co-Authored-By` atau atribusi Claude apa pun** di pesan commit maupun deskripsi PR
 - Jangan pernah meng-commit atau mem-push isi `docs/superpowers/`
@@ -104,7 +107,7 @@ Aturan di bawah **tidak akan tertangkap `flutter analyze`**. Kalau dilanggar, ko
 
 ### 1. App tidak pernah memanggil AI secara langsung
 
-Tidak ada API key AI, prompt, atau SDK LLM di kode Flutter. Semua AI lewat Edge Functions. `ANTHROPIC_API_KEY` hanya ada di Supabase secrets, tidak di `env/`, tidak di repo, dan tidak di dart-define.
+Tidak ada API key AI, prompt, atau SDK LLM di kode Flutter. Semua AI lewat Edge Functions. `GEMINI_API_KEY` hanya ada di Supabase secrets (di lokal: `supabase/functions/.env`, di-gitignore), tidak di `env/`, tidak di repo, dan tidak di dart-define. App hanya mengirim kunci model (`gemini_flash`, dst.), bukan ID model. ID model hanya ada di allowlist `_shared/ai_models.ts`.
 
 ### 2. Setiap tabel wajib punya RLS dan test pgTAP
 
@@ -120,7 +123,7 @@ Buat Supabase client di function dengan meneruskan header `Authorization` dari r
 
 ### 5. Output AI tidak pernah dipercaya mentah
 
-JSON dari Claude divalidasi dengan zod sebelum disimpan: ID latihan harus ada di katalog, dan jumlah hari harus sama dengan `days_per_week`. Simpan plan lewat satu Postgres function (satu transaksi), jangan lewat beberapa insert terpisah.
+JSON dari Gemini divalidasi dengan zod sebelum disimpan: ID latihan harus ada di katalog, dan jumlah hari harus sama dengan `days_per_week`. Jumlah hari juga dikunci di JSON Schema yang dikirim ke Gemini. Daftar ID latihan tidak dimasukkan ke schema karena Gemini menolak `enum` daftar ID. ID dijaga oleh daftar katalog di prompt dan validasi zod. Jangan tambahkan `enum` ID latihan ke schema. Output yang tidak valid dicoba ulang sekali dengan daftar error. Simpan plan lewat satu Postgres function (`save_generated_plan`, satu transaksi), jangan lewat beberapa insert terpisah.
 
 ### 6. UI tidak menyentuh Supabase secara langsung
 
@@ -208,10 +211,11 @@ Visual **Repmind** sudah disetujui owner. Target tampilannya ada di `docs/design
 - **Navbar (`RepmindNavBar`):**
   - Mengambang, putih semi-transparan dengan blur (`BackdropFilter`), dan hanya berisi ikon.
   - Tab aktif berupa kotak 44px di dalam bar: Home dan Plan lime, Coach violet, Progress orange.
-  - Baru dipasang di sub-project 2.
+  - Dipasang sejak sub-project 2 dengan 4 ikon. Coach dan Progress tampil sebagai tab tidak aktif dan belum bisa diketuk sampai SP3 dan SP4.
 - **Font:** Barlow Condensed untuk judul dan angka, Barlow untuk teks, disertakan sebagai asset (tanpa `google_fonts`). Teks untuk style `headline`, `title`, `section`, dan `label` ditulis uppercase. Skala tipografi ada di spec §6.2.
 - **Radius:** 16 untuk kartu hero, 14 untuk kartu, 12 untuk baris list, tombol, dan field, 8 untuk badge dan chip, 20 untuk navbar, dan 14 untuk tab aktif.
 - **Ikon sparkle violet** (`Icons.auto_awesome_rounded`) menandai semua yang dibuat AI.
+- **Tombol aksi AI** (`PrimaryButton` varian `ai`): isian violet dengan sparkle dan teks putih, untuk aksi yang memanggil AI ("Generate my plan"). Aksi biasa tetap lime.
 
 ---
 
@@ -237,7 +241,7 @@ Pasang lewat `flutter pub add` (atau `flutter pub add --dev`). Jangan menulis an
 | 3 | `flutter_markdown_plus` | |
 | 4 | `fl_chart` | |
 
-Edge Functions: `@anthropic-ai/sdk`, `zod`, `@supabase/supabase-js` (import dengan prefix `npm:` / `jsr:`).
+Edge Functions: `@google/genai`, `zod`, `@supabase/supabase-js`, di-import langsung dengan specifier `npm:` / `jsr:` dan versi pasti (tanpa import map).
 
 **Jangan pasang tanpa diminta:** `freezed`, `json_serializable`, `flutter_dotenv`, `google_fonts`, `dio`, `get_it`, `provider`, `flutter_bloc`, `hive`, dan SDK LLM apa pun di sisi Flutter.
 

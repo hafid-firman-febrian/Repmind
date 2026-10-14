@@ -68,6 +68,25 @@ void main() {
       );
     });
 
+    test('edge function failures', () {
+      expect(
+        mapToAppException(const FunctionsHttpException(status: 502)),
+        isA<PlanGenerationFailure>(),
+      );
+      expect(
+        mapToAppException(const FunctionsHttpException(status: 500)),
+        isA<UnknownFailure>(),
+      );
+      expect(
+        mapToAppException(const FunctionsHttpException(status: 409)),
+        isA<UnknownFailure>(),
+      );
+      expect(
+        mapToAppException(const FunctionsFetchException(details: 'offline')),
+        isA<NetworkFailure>(),
+      );
+    });
+
     test('anything else is unknown', () {
       expect(mapToAppException(StateError('bug')), isA<UnknownFailure>());
       expect(

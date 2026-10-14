@@ -9,10 +9,14 @@ import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/auth/presentation/pages/welcome_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
+import '../../features/plan/presentation/pages/generating_page.dart';
+import '../../features/plan/presentation/pages/plan_day_page.dart';
+import '../../features/plan/presentation/pages/plan_page.dart';
 import '../../features/profile/presentation/controllers/profile_controller.dart';
 import '../../features/profile/presentation/pages/edit_profile_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import 'app_routes.dart';
+import 'app_shell.dart';
 import 'redirect.dart';
 
 part 'app_router.g.dart';
@@ -40,7 +44,38 @@ GoRouter appRouter(Ref ref) {
         path: AppRoutes.onboarding,
         builder: (_, _) => const OnboardingPage(),
       ),
-      GoRoute(path: AppRoutes.home, builder: (_, _) => const HomePage()),
+      StatefulShellRoute.indexedStack(
+        builder: (_, _, navigationShell) =>
+            AppShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.home,
+                builder: (_, _) => const HomePage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.plan,
+                builder: (_, _) => const PlanPage(),
+              ),
+            ],
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.workoutDay,
+        builder: (_, state) => PlanDayPage(
+          dayNumber: int.tryParse(state.pathParameters['day'] ?? ''),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.generating,
+        builder: (_, _) => const GeneratingPage(),
+      ),
       GoRoute(
         path: AppRoutes.profile,
         builder: (_, _) => const ProfilePage(),

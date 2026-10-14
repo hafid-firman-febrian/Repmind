@@ -1,3 +1,4 @@
+import 'ai_model.dart';
 import 'equipment.dart';
 import 'fitness_goal.dart';
 import 'fitness_level.dart';
@@ -15,6 +16,7 @@ class Profile {
     required this.weightKg,
     required this.heightCm,
     required this.onboardedAt,
+    required this.aiModel,
   });
 
   final String id;
@@ -27,6 +29,7 @@ class Profile {
   final double? weightKg;
   final double? heightCm;
   final DateTime? onboardedAt;
+  final AiModel aiModel;
 
   bool get isOnboarded => onboardedAt != null;
 
@@ -70,6 +73,7 @@ class Profile {
       weightKg: (json['weight_kg'] as num?)?.toDouble(),
       heightCm: (json['height_cm'] as num?)?.toDouble(),
       onboardedAt: onboardedAt == null ? null : DateTime.parse(onboardedAt),
+      aiModel: AiModel.fromDb(json['ai_model'] as String),
     );
   }
 }

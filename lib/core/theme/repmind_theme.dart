@@ -20,6 +20,12 @@ ThemeData buildRepmindTheme() {
     error: colors.danger,
     onError: colors.surface,
     outline: colors.line,
+    surfaceTint: Colors.transparent,
+    surfaceContainerLowest: colors.surface,
+    surfaceContainerLow: colors.surface,
+    surfaceContainer: colors.surface,
+    surfaceContainerHigh: colors.surfaceSunken,
+    surfaceContainerHighest: colors.surfaceSunken,
   );
 
   OutlineInputBorder fieldBorder(Color color, {double width = 1}) =>
@@ -66,6 +72,7 @@ ThemeData buildRepmindTheme() {
       hintStyle: text.body.copyWith(color: colors.muted),
       suffixStyle: text.body.copyWith(color: colors.muted),
       errorStyle: text.bodySmall.copyWith(color: colors.danger),
+      counterStyle: text.bodySmall.copyWith(color: colors.muted),
       border: fieldBorder(colors.line),
       enabledBorder: fieldBorder(colors.line),
       focusedBorder: fieldBorder(colors.ink, width: 1.5),
@@ -79,6 +86,25 @@ ThemeData buildRepmindTheme() {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(RepmindRadius.button),
       ),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: colors.surface,
+      modalBackgroundColor: colors.surface,
+      surfaceTintColor: Colors.transparent,
+      showDragHandle: true,
+      dragHandleColor: colors.line,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(RepmindRadius.hero),
+        ),
+      ),
+    ),
+    tooltipTheme: TooltipThemeData(
+      decoration: BoxDecoration(
+        color: colors.ink,
+        borderRadius: BorderRadius.circular(RepmindRadius.badge),
+      ),
+      textStyle: text.bodySmall.copyWith(color: colors.surface),
     ),
   );
 }

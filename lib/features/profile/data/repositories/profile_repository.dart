@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../core/errors/error_mapper.dart';
 import '../../../../core/supabase/supabase_client_provider.dart';
+import '../../domain/models/ai_model.dart';
 import '../../domain/models/profile_details.dart';
 import '../../domain/models/profile_model.dart';
 import '../data_sources/profile_remote_data_source.dart';
@@ -41,6 +42,12 @@ class ProfileRepository {
         await _remote.updateProfile(userId, {'avatar_url': versionedUrl}),
       );
     },
+  );
+
+  Future<Profile> updateAiModel(String userId, AiModel model) => runGuarded(
+    () async => Profile.fromJson(
+      await _remote.updateProfile(userId, {'ai_model': model.dbValue}),
+    ),
   );
 }
 

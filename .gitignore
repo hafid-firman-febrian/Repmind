@@ -59,3 +59,4 @@ env/*.json
 
 # Supabase CLI secrets (Google OAuth secret, see docs/setup/google-sign-in.md)
 supabase/.env
+supabase/functions/.env

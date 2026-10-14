@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/theme_context.dart';
+import '../../../../core/widgets/app_snack_bar.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/square_icon_button.dart';
 import '../controllers/edit_profile_controller.dart';
@@ -17,9 +18,7 @@ class EditProfilePage extends ConsumerWidget {
   Future<void> _save(BuildContext context, WidgetRef ref) async {
     final saved = await ref.read(editProfileControllerProvider.notifier).save();
     if (!saved || !context.mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('Profile updated')));
+    showAppSnackBar(context, 'Profile updated');
     context.pop();
   }
 
@@ -28,9 +27,7 @@ class EditProfilePage extends ConsumerWidget {
     ref.listen(editProfileControllerProvider, (previous, next) {
       final error = next.error;
       if (error == null || error == previous?.error) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(error.message)));
+      showAppSnackBar(context, error.message);
     });
 
     final state = ref.watch(editProfileControllerProvider);

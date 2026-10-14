@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:repmind/features/profile/domain/models/ai_model.dart';
 import 'package:repmind/features/profile/domain/models/equipment.dart';
 import 'package:repmind/features/profile/domain/models/fitness_goal.dart';
 import 'package:repmind/features/profile/domain/models/fitness_level.dart';
@@ -9,6 +10,14 @@ import '../../../fixtures/profile_fixtures.dart';
 
 void main() {
   group('Profile.fromJson', () {
+    test('reads the chosen AI model', () {
+      expect(Profile.fromJson(profileRow()).aiModel, AiModel.geminiFlash);
+      expect(
+        Profile.fromJson({...profileRow(), 'ai_model': 'gemini_pro'}).aiModel,
+        AiModel.geminiPro,
+      );
+    });
+
     test('reads an onboarded row with snake_case columns', () {
       final profile = Profile.fromJson(profileRow());
 
