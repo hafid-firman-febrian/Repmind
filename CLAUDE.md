@@ -6,7 +6,7 @@ Repmind adalah app fitness Flutter dengan AI coach. Pembedanya dua fitur AI: **A
 
 Ini **proyek portofolio untuk Upwork**. Hasil akhirnya repo GitHub, README, dan video demo. App hanya dijalankan oleh owner (tidak ada rilis ke store atau APK publik). Bahasa UI: Inggris. Satuan: metrik. Light mode saja.
 
-Spec lengkap ada di `docs/superpowers/specs/2026-09-30-repmind-design.md`. **Baca sebelum mengerjakan area yang belum kamu kenal.** Decision log D1–D16 di sana menjelaskan alasan tiap keputusan.
+Spec lengkap ada di `docs/superpowers/specs/2026-09-30-repmind-design.md`. **Baca sebelum mengerjakan area yang belum kamu kenal.** Decision log D1–D22 di sana menjelaskan alasan tiap keputusan.
 
 ## Tech Stack
 
@@ -63,7 +63,7 @@ Tiap sub-project punya spec dan plan sendiri di `docs/superpowers/`.
 - `supabase db reset`: jalankan ulang semua migration dan seed di lokal
 - `supabase test db`: test pgTAP (RLS, trigger)
 - `supabase functions serve`: jalankan Edge Functions di lokal
-- `deno test --allow-all supabase/functions/`: test Edge Functions
+- `deno test --allow-all --no-config supabase/functions/`: test Edge Functions (`--no-config` supaya `package.json` atau `deno.json` di folder induk tidak ikut terbaca)
 - `deno fmt supabase/functions`: formatter Edge Functions
 - `supabase db push` / `supabase functions deploy <nama>`: kirim ke project cloud. **Tanya dulu sebelum menjalankan.**
 
@@ -123,7 +123,7 @@ Buat Supabase client di function dengan meneruskan header `Authorization` dari r
 
 ### 5. Output AI tidak pernah dipercaya mentah
 
-JSON dari Gemini divalidasi dengan zod sebelum disimpan: ID latihan harus ada di katalog, dan jumlah hari harus sama dengan `days_per_week`. Keduanya juga dikunci di JSON Schema yang dikirim ke Gemini. Output yang tidak valid dicoba ulang sekali dengan daftar error. Simpan plan lewat satu Postgres function (`save_generated_plan`, satu transaksi), jangan lewat beberapa insert terpisah.
+JSON dari Gemini divalidasi dengan zod sebelum disimpan: ID latihan harus ada di katalog, dan jumlah hari harus sama dengan `days_per_week`. Jumlah hari juga dikunci di JSON Schema yang dikirim ke Gemini. Daftar ID latihan tidak dimasukkan ke schema karena Gemini menolak `enum` daftar ID. ID dijaga oleh daftar katalog di prompt dan validasi zod. Jangan tambahkan `enum` ID latihan ke schema. Output yang tidak valid dicoba ulang sekali dengan daftar error. Simpan plan lewat satu Postgres function (`save_generated_plan`, satu transaksi), jangan lewat beberapa insert terpisah.
 
 ### 6. UI tidak menyentuh Supabase secara langsung
 
