@@ -17,6 +17,8 @@ AppException mapToAppException(Object error) => switch (error) {
     const EmailAlreadyRegistered(),
   GoogleSignInException(code: GoogleSignInExceptionCode.canceled) =>
     const SignInCancelled(),
+  FunctionsFetchException() => const NetworkFailure(),
+  FunctionException(status: 502) => const PlanGenerationFailure(),
   SocketException() || TimeoutException() => const NetworkFailure(),
   StorageException() => const StorageFailure(),
   _ => const UnknownFailure(),

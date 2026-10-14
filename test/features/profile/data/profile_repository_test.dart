@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:repmind/core/errors/app_exception.dart';
 import 'package:repmind/features/profile/data/repositories/profile_repository.dart';
+import 'package:repmind/features/profile/domain/models/ai_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../fixtures/profile_fixtures.dart';
@@ -124,5 +125,18 @@ void main() {
       ),
       throwsA(isA<UnknownFailure>()),
     );
+  });
+
+  test('updateAiModel stores the model key', () async {
+    when(
+      () => remote.updateProfile(any(), any()),
+    ).thenAnswer((_) async => {...profileRow(), 'ai_model': 'gemini_pro'});
+
+    final profile = await repository.updateAiModel('user-1', AiModel.geminiPro);
+
+    verify(
+      () => remote.updateProfile('user-1', {'ai_model': 'gemini_pro'}),
+    ).called(1);
+    expect(profile.aiModel, AiModel.geminiPro);
   });
 }

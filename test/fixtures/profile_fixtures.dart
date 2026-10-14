@@ -18,6 +18,7 @@ Map<String, dynamic> profileRow({
   'weight_kg': onboarded ? 72.5 : null,
   'height_cm': onboarded ? 175 : null,
   'onboarded_at': onboarded ? '2026-09-30T08:00:00+00:00' : null,
+  'ai_model': 'gemini_flash',
   'created_at': '2026-09-30T07:00:00+00:00',
   'updated_at': '2026-09-30T08:00:00+00:00',
 };

@@ -100,6 +100,9 @@ void main() {
         AppRoutes.home,
         AppRoutes.profile,
         AppRoutes.editProfile,
+        AppRoutes.plan,
+        AppRoutes.generating,
+        AppRoutes.workoutDayPath(2),
       ]) {
         expect(
           go(AuthStatus.signedIn, ProfileStatus.onboarded, location),

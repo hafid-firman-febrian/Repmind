@@ -19,6 +19,9 @@ class RepmindTextField extends StatefulWidget {
     this.autofillHints,
     this.suffixText,
     this.enabled = true,
+    this.minLines,
+    this.maxLines = 1,
+    this.maxLength,
   });
 
   final String label;
@@ -35,6 +38,9 @@ class RepmindTextField extends StatefulWidget {
   final Iterable<String>? autofillHints;
   final String? suffixText;
   final bool enabled;
+  final int? minLines;
+  final int maxLines;
+  final int? maxLength;
 
   @override
   State<RepmindTextField> createState() => _RepmindTextFieldState();
@@ -75,6 +81,9 @@ class _RepmindTextFieldState extends State<RepmindTextField> {
           keyboardType: widget.keyboardType,
           textInputAction: widget.textInputAction,
           obscureText: _obscured,
+          minLines: widget.minLines,
+          maxLines: widget.obscureText ? 1 : widget.maxLines,
+          maxLength: widget.maxLength,
           autofillHints: widget.autofillHints,
           enabled: widget.enabled,
           style: text.body,

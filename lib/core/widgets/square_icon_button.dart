@@ -9,11 +9,13 @@ class SquareIconButton extends StatelessWidget {
     required this.icon,
     required this.tooltip,
     required this.onPressed,
+    this.ai = false,
   });
 
   final IconData icon;
   final String tooltip;
   final VoidCallback? onPressed;
+  final bool ai;
 
   @override
   Widget build(BuildContext context) {
@@ -21,24 +23,25 @@ class SquareIconButton extends StatelessWidget {
     final enabled = onPressed != null;
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(RepmindRadius.button),
-      side: BorderSide(color: colors.line),
+      side: BorderSide(color: ai ? colors.violetLine : colors.line),
     );
+    final iconColor = !enabled
+        ? colors.muted
+        : ai
+        ? colors.violet
+        : colors.ink;
 
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: colors.surface,
+        color: ai ? colors.violetTint : colors.surface,
         shape: shape,
         child: InkWell(
           customBorder: shape,
           onTap: onPressed,
           child: SizedBox.square(
             dimension: 40,
-            child: Icon(
-              icon,
-              size: 20,
-              color: enabled ? colors.ink : colors.muted,
-            ),
+            child: Icon(icon, size: 20, color: iconColor),
           ),
         ),
       ),

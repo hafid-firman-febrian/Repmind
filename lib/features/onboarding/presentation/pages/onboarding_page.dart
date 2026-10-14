@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/repmind_radius.dart';
 import '../../../../core/theme/theme_context.dart';
+import '../../../../core/widgets/app_snack_bar.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/square_icon_button.dart';
 import '../../../profile/presentation/widgets/body_metrics_fields.dart';
@@ -39,9 +40,7 @@ class OnboardingPage extends ConsumerWidget {
     ref.listen(onboardingControllerProvider, (previous, next) {
       final error = next.error;
       if (error == null || error == previous?.error) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(error.message)));
+      showAppSnackBar(context, error.message);
     });
 
     final state = ref.watch(onboardingControllerProvider);

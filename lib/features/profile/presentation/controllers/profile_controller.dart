@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../auth/presentation/controllers/auth_status_provider.dart';
 import '../../data/repositories/profile_repository.dart';
+import '../../domain/models/ai_model.dart';
 import '../../domain/models/profile_details.dart';
 import '../../domain/models/profile_model.dart';
 
@@ -31,6 +32,9 @@ class ProfileController extends _$ProfileController {
 
   Future<void> updateAvatar(Uint8List bytes) =>
       _commit((userId, repository) => repository.updateAvatar(userId, bytes));
+
+  Future<void> updateAiModel(AiModel model) =>
+      _commit((userId, repository) => repository.updateAiModel(userId, model));
 
   Future<void> _commit(
     Future<Profile> Function(String userId, ProfileRepository repository) write,

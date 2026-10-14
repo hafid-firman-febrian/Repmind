@@ -39,4 +39,25 @@ void main() {
       RepmindColors.light.ink,
     );
   });
+
+  test('keeps Material surfaces on Repmind tokens instead of lime tones', () {
+    const colors = RepmindColors.light;
+    final scheme = theme.colorScheme;
+    expect(scheme.surfaceContainerLowest, colors.surface);
+    expect(scheme.surfaceContainerLow, colors.surface);
+    expect(scheme.surfaceContainer, colors.surface);
+    expect(scheme.surfaceContainerHigh, colors.surfaceSunken);
+    expect(scheme.surfaceContainerHighest, colors.surfaceSunken);
+    expect(scheme.surfaceTint, Colors.transparent);
+  });
+
+  test('styles bottom sheets and tooltips with Repmind tokens', () {
+    const colors = RepmindColors.light;
+    expect(theme.bottomSheetTheme.backgroundColor, colors.surface);
+    expect(theme.bottomSheetTheme.modalBackgroundColor, colors.surface);
+    expect(theme.bottomSheetTheme.dragHandleColor, colors.line);
+    expect(theme.bottomSheetTheme.showDragHandle, isTrue);
+    final tooltip = theme.tooltipTheme.decoration! as BoxDecoration;
+    expect(tooltip.color, colors.ink);
+  });
 }
