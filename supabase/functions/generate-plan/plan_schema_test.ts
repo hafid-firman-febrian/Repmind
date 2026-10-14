@@ -45,8 +45,15 @@ Deno.test("the Gemini schema locks the day count and leaves a large exercise lis
     };
   };
   const days = geminiSchema.properties.days;
-  const foreignExercise = samplePlanOutput();
+  const largeCatalogPlan = samplePlanOutput();
+  largeCatalogPlan.days.forEach((day, dayIndex) =>
+    day.exercises.forEach((exercise, exerciseIndex) => {
+      exercise.exercise_id = largeCatalogIds[dayIndex * 8 + exerciseIndex];
+    })
+  );
+  const foreignExercise = structuredClone(largeCatalogPlan);
   foreignExercise.days[0].exercises[0].exercise_id = "made_up_move";
+  const largeCatalogSchema = planOutputSchema(largeCatalogIds, 2);
 
   assertEquals(days.minItems, 4);
   assertEquals(days.maxItems, 4);
@@ -55,10 +62,8 @@ Deno.test("the Gemini schema locks the day count and leaves a large exercise lis
     undefined,
   );
   assertEquals(days.items.properties.focus.enum.length, 4);
-  assertEquals(
-    planOutputSchema(largeCatalogIds, 2).safeParse(foreignExercise).success,
-    false,
-  );
+  assertEquals(largeCatalogSchema.safeParse(largeCatalogPlan).success, true);
+  assertEquals(largeCatalogSchema.safeParse(foreignExercise).success, false);
 });
 
 Deno.test("the Gemini schema only uses keywords Gemini supports", () => {
