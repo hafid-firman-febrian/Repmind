@@ -36,7 +36,7 @@ class PlanPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final plan = ref.watch(activePlanControllerProvider).value;
+    final plan = currentPlanOf(ref.watch(activePlanControllerProvider));
 
     return Scaffold(
       body: SafeArea(

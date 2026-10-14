@@ -140,6 +140,9 @@ void main() {
       container.read(planGenerationControllerProvider),
       isA<PlanGenerationSucceeded>(),
     );
+    final activePlan = container.read(activePlanControllerProvider);
+    expect(activePlan.isLoading, isFalse);
+    expect(activePlan.error, isA<NetworkFailure>());
     verify(
       () => repository.generatePlan(instruction: 'More core work'),
     ).called(1);
