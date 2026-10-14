@@ -27,7 +27,8 @@ Studio lokal (UI database) tersedia di `http://127.0.0.1:54323`.
 
 1. Salin `supabase/functions/.env.example` ke `supabase/functions/.env`, lalu isi `GEMINI_API_KEY` dengan API key dari Google AI Studio. File ini di-gitignore.
 2. Jalankan `supabase functions serve`. Perintah ini menyalakan edge runtime dan otomatis membaca `supabase/functions/.env`.
-3. Test function: `deno test --allow-all supabase/functions/`. Deno dipasang dengan `brew install deno`.
+3. Pasang Deno dengan `brew install deno`. Di Mac Intel, Homebrew mem-build Deno dari source dan bisa makan waktu berjam-jam. Pakai binary prebuilt resmi saja: unduh `deno-x86_64-apple-darwin.zip` dari GitHub releases Deno, ekstrak `deno` ke `~/.deno/bin`, lalu tambahkan `~/.deno/bin` ke `PATH`.
+4. Test function: `deno test --allow-all --no-config supabase/functions/`, sama seperti di CI. `--no-config` mencegah `package.json` atau `deno.json` di folder induk ikut terbaca.
 
 ## Akun demo
 
