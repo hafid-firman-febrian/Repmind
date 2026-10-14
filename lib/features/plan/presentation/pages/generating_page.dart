@@ -34,6 +34,14 @@ class _GeneratingPageState extends ConsumerState<GeneratingPage>
     vsync: this,
     duration: const Duration(milliseconds: 1200),
   );
+  late final CurvedAnimation _pulseCurve = CurvedAnimation(
+    parent: _pulse,
+    curve: Curves.easeInOut,
+  );
+  late final Animation<double> _pulseScale = Tween<double>(
+    begin: 0.94,
+    end: 1,
+  ).animate(_pulseCurve);
   Timer? _statusTimer;
   var _statusIndex = 0;
 
@@ -64,6 +72,7 @@ class _GeneratingPageState extends ConsumerState<GeneratingPage>
   @override
   void dispose() {
     _statusTimer?.cancel();
+    _pulseCurve.dispose();
     _pulse.dispose();
     super.dispose();
   }
@@ -134,7 +143,7 @@ class _GeneratingPageState extends ConsumerState<GeneratingPage>
                   adjusting: instruction != null,
                   status: GeneratingPage.statuses[_statusIndex],
                   contextLine: _contextLine(),
-                  pulse: _pulse,
+                  scale: _pulseScale,
                 ),
                 PlanGenerationFailed(:final error) => _FailedView(
                   message: error.message,
@@ -157,13 +166,13 @@ class _RunningView extends StatelessWidget {
     required this.adjusting,
     required this.status,
     required this.contextLine,
-    required this.pulse,
+    required this.scale,
   });
 
   final bool adjusting;
   final String status;
   final String? contextLine;
-  final Animation<double> pulse;
+  final Animation<double> scale;
 
   @override
   Widget build(BuildContext context) {
@@ -175,10 +184,7 @@ class _RunningView extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         ScaleTransition(
-          scale: Tween<double>(
-            begin: 0.94,
-            end: 1,
-          ).animate(CurvedAnimation(parent: pulse, curve: Curves.easeInOut)),
+          scale: scale,
           child: Container(
             width: 88,
             height: 88,

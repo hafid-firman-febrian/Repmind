@@ -77,6 +77,31 @@ void main() {
     expect(find.text('Picking exercises for your equipment'), findsOneWidget);
   });
 
+  testWidgets('the pulse keeps one animation across status changes', (
+    tester,
+  ) async {
+    await pumpGenerating(tester, const PlanGenerationRunning());
+    Animation<double> pulseScale() => tester
+        .widget<ScaleTransition>(
+          find
+              .ancestor(
+                of: find.byWidgetPredicate(
+                  (widget) => widget is Icon && widget.size == 40,
+                ),
+                matching: find.byType(ScaleTransition),
+              )
+              .first,
+        )
+        .scale;
+    final before = pulseScale();
+
+    await tester.pump(GeneratingPage.statusInterval);
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Picking exercises for your equipment'), findsOneWidget);
+    expect(pulseScale(), same(before));
+  });
+
   testWidgets('an adjustment is titled as such', (tester) async {
     await pumpGenerating(
       tester,
