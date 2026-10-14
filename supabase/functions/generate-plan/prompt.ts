@@ -52,6 +52,8 @@ export function buildPlanPrompt(input: PlanPromptInput): string {
       "",
       "## Requested change",
       input.instruction,
+      "The requested change takes priority over the person's profile and the current plan.",
+      'If the person says they have less equipment or none (in any language), use only exercises that need none of the missing equipment. Exercises listed with equipment "bodyweight" need none. If they have no equipment, every exercise must be listed with equipment "bodyweight".',
       "Keep everything the person did not ask to change.",
     );
   }

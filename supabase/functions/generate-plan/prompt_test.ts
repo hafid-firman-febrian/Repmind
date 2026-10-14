@@ -73,3 +73,29 @@ Deno.test("the system prompt states the plan and day title limits", () => {
 Deno.test("the system prompt forbids a version number in the plan title", () => {
   assertStringIncludes(SYSTEM_PROMPT, "never put a version number in it");
 });
+
+const PRIORITY_LINE =
+  "The requested change takes priority over the person's profile and the current plan.";
+const EQUIPMENT_LINE =
+  'If the person says they have less equipment or none (in any language), use only exercises that need none of the missing equipment. Exercises listed with equipment "bodyweight" need none. If they have no equipment, every exercise must be listed with equipment "bodyweight".';
+const KEEP_LINE = "Keep everything the person did not ask to change.";
+
+Deno.test("an adjustment lets the request override the profile and equipment", () => {
+  const text = prompt("Aku tidak punya alat", activePlan);
+  const instructionAt = text.indexOf("Aku tidak punya alat");
+  const priorityAt = text.indexOf(PRIORITY_LINE);
+  const equipmentAt = text.indexOf(EQUIPMENT_LINE);
+  const keepAt = text.indexOf(KEEP_LINE);
+  assert(instructionAt >= 0);
+  assert(priorityAt > instructionAt);
+  assert(equipmentAt > priorityAt);
+  assert(keepAt > equipmentAt);
+  assert(text.endsWith(KEEP_LINE));
+});
+
+Deno.test("a fresh plan does not mention the override rules", () => {
+  for (const text of [prompt(null, null), prompt(null, activePlan)]) {
+    assertEquals(text.includes(PRIORITY_LINE), false);
+    assertEquals(text.includes(EQUIPMENT_LINE), false);
+  }
+});
