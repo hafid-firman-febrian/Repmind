@@ -12,6 +12,8 @@ class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockGoTrueClient extends Mock implements GoTrueClient {}
 
+class MockFunctionsClient extends Mock implements FunctionsClient {}
+
 class MockSession extends Mock implements Session {}
 
 class MockGoogleAuthDataSource extends Mock implements GoogleAuthDataSource {}
