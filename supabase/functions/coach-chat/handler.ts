@@ -12,7 +12,11 @@ import {
   buildProposalRetryPrompt,
   COACH_SYSTEM_PROMPT,
 } from "./prompt.ts";
-import { buildProposal, type ProposalContext } from "./proposal.ts";
+import {
+  buildProposal,
+  namesUnfiledChange,
+  type ProposalContext,
+} from "./proposal.ts";
 import { parseCoachChatRequest } from "./request.ts";
 import { PROPOSE_PLAN_CHANGE } from "./tool.ts";
 import type { ChatHistoryMessage, CoachStore, PlanProposal } from "./types.ts";
@@ -21,6 +25,8 @@ const HISTORY_LIMIT = 20;
 const MAX_REPLY_CHARS = 8000;
 const FALLBACK_TEXT = "Here's the change I suggest.";
 const FAILURE_NOTE = "I couldn't prepare that change. Try asking again.";
+const UNFILED_CHANGE_ERROR =
+  "The reply suggests a plan change but propose_plan_change was not called.";
 const NOTE_SEPARATOR = "\n\n";
 const TEXT_BUDGET = MAX_REPLY_CHARS - NOTE_SEPARATOR.length -
   FAILURE_NOTE.length;
@@ -151,6 +157,7 @@ async function reply(input: ReplyInput): Promise<void> {
   const resolution = await resolveProposal(
     first,
     context,
+    signal,
     (errors) =>
       collect(model, {
         ...modelRequest,
@@ -204,6 +211,7 @@ async function reply(input: ReplyInput): Promise<void> {
 async function resolveProposal(
   first: Collected,
   context: ProposalContext | null,
+  signal: AbortSignal,
   retry: (errors: string[]) => Promise<Collected>,
 ): Promise<Resolution> {
   const none: Resolution = {
@@ -211,7 +219,13 @@ async function resolveProposal(
     userConfirmed: false,
     failed: false,
   };
-  if (context === null || !first.hasToolCall) return none;
+  if (context === null) return none;
+  if (!first.hasToolCall) {
+    if (!namesUnfiledChange(first.text, context.plan, context.catalog)) {
+      return none;
+    }
+    return await forceProposal(context, signal, retry);
+  }
 
   const attempt = buildProposal(first.toolArgs, context);
   if (attempt.ok) {
@@ -236,6 +250,38 @@ async function resolveProposal(
   }
   console.warn("Proposal attempt 2 was invalid", secondAttempt.errors);
   return { proposal: null, userConfirmed: false, failed: true };
+}
+
+async function forceProposal(
+  context: ProposalContext,
+  signal: AbortSignal,
+  retry: (errors: string[]) => Promise<Collected>,
+): Promise<Resolution> {
+  const failed: Resolution = {
+    proposal: null,
+    userConfirmed: false,
+    failed: true,
+  };
+  let forced: Collected;
+  try {
+    forced = await retry([UNFILED_CHANGE_ERROR]);
+  } catch (error) {
+    if (signal.aborted) throw error;
+    console.warn("The forced proposal call failed", error);
+    return failed;
+  }
+  const attempt = forced.hasToolCall
+    ? buildProposal(forced.toolArgs, context)
+    : { ok: false as const, errors: ["propose_plan_change was not called"] };
+  if (!attempt.ok) {
+    console.warn("The forced proposal was invalid", attempt.errors);
+    return failed;
+  }
+  return {
+    proposal: attempt.proposal,
+    userConfirmed: attempt.userConfirmed,
+    failed: false,
+  };
 }
 
 async function collect(

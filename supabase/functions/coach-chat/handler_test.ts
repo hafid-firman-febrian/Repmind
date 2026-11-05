@@ -750,3 +750,130 @@ Deno.test("cancelling stops the model and saves nothing", async () => {
   assertEquals(store.assistantSaves, []);
   assertEquals(store.userMessages, [newMessage.message]);
 });
+
+const SWAP_TEXT = "Swap Dumbbell Shoulder Press for Push-up on Thursday.";
+
+class ParkOnSecondCallModel implements ChatModel {
+  requests: ChatModelRequest[] = [];
+  parked: Promise<void>;
+  finished: Promise<void>;
+  #markParked!: () => void;
+  #markFinished!: () => void;
+
+  constructor() {
+    this.parked = new Promise((resolve) => this.#markParked = resolve);
+    this.finished = new Promise((resolve) => this.#markFinished = resolve);
+  }
+
+  async *stream(request: ChatModelRequest): AsyncGenerator<ChatEvent> {
+    this.requests.push(request);
+    if (this.requests.length === 1) {
+      yield await Promise.resolve(text(SWAP_TEXT));
+      return;
+    }
+    try {
+      this.#markParked();
+      await new Promise<void>((resolve) => {
+        request.signal?.addEventListener("abort", () => resolve());
+      });
+    } finally {
+      this.#markFinished();
+    }
+  }
+}
+
+Deno.test("a reply naming a new exercise without a tool call forces one tool call", async () => {
+  const model = new FakeModel([
+    [text(SWAP_TEXT)],
+    [text("this text is not forwarded"), toolCall(validArgs)],
+  ]);
+  const store = new FakeStore();
+
+  const events = await converse(store, model);
+
+  assertEquals(model.requests.length, 2);
+  assertEquals(model.requests[0].forceTool, undefined);
+  assertEquals(model.requests[1].forceTool, true);
+  assertStringIncludes(model.requests[1].prompt, SWAP_TEXT);
+  assertStringIncludes(
+    model.requests[1].prompt,
+    "The reply suggests a plan change but propose_plan_change was not called.",
+  );
+  assertEquals(deltas(events), [SWAP_TEXT]);
+  const done = events.at(-1)!;
+  assertEquals(done.type, "done");
+  assertEquals((done.proposal as PlanProposal).day_number, 2);
+  assertEquals(store.assistantSaves[0].content, SWAP_TEXT);
+  assertEquals(store.assistantSaves[0].proposal, done.proposal);
+});
+
+Deno.test("a plain reply makes no extra request", async () => {
+  const model = new FakeModel([[text("Ease off today.")]]);
+  const store = new FakeStore();
+
+  const events = await converse(store, model);
+
+  assertEquals(model.requests.length, 1);
+  assertEquals(events.at(-1)!.proposal, null);
+  assertEquals(deltas(events), ["Ease off today."]);
+  assertEquals(store.assistantSaves[0].content, "Ease off today.");
+});
+
+Deno.test("no plan never forces a tool call", async () => {
+  const model = new FakeModel([[text(SWAP_TEXT)]]);
+  const store = new FakeStore({ plan: null });
+
+  const events = await converse(store, model);
+
+  assertEquals(model.requests.length, 1);
+  assertEquals(events.at(-1)!.type, "done");
+  assertEquals(store.assistantSaves[0].content, SWAP_TEXT);
+});
+
+Deno.test("a forced call with no valid tool call appends the note", async () => {
+  const model = new FakeModel([[text(SWAP_TEXT)], [text("sorry")]]);
+  const store = new FakeStore();
+
+  const events = await converse(store, model, newMessage, 1);
+
+  assertEquals(model.requests.length, 2);
+  assertStringIncludes(deltas(events).at(-1)!, FAILURE_NOTE);
+  assertEquals(events.at(-1)!.type, "done");
+  assertEquals(events.at(-1)!.proposal, null);
+  assertEquals(
+    store.assistantSaves[0].content,
+    `${SWAP_TEXT}\n\n${FAILURE_NOTE}`,
+  );
+  assertEquals(store.assistantSaves[0].proposal, null);
+});
+
+Deno.test("a forced call that fails keeps the reply", async () => {
+  const model = new FakeModel([[text(SWAP_TEXT)], [new Error("timeout")]]);
+  const store = new FakeStore();
+
+  const events = await converse(store, model, newMessage, 1);
+
+  assertEquals(model.requests.length, 2);
+  assertEquals(events.at(-1)!.type, "done");
+  assertEquals(events.at(-1)!.proposal, null);
+  assertEquals(
+    store.assistantSaves[0].content,
+    `${SWAP_TEXT}\n\n${FAILURE_NOTE}`,
+  );
+  assertEquals(store.assistantSaves[0].proposal, null);
+});
+
+Deno.test("cancelling during the forced call saves nothing", async () => {
+  const store = new FakeStore();
+  const model = new ParkOnSecondCallModel();
+
+  const response = await handleCoachChat(post(newMessage), { store, model });
+  await model.parked;
+  await response.body!.cancel();
+  await model.finished;
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  assertEquals(model.requests.length, 2);
+  assertEquals(model.requests[1].signal?.aborted, true);
+  assertEquals(store.assistantSaves, []);
+});

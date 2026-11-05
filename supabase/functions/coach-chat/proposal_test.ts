@@ -1,7 +1,7 @@
 import { assert, assertEquals } from "jsr:@std/assert@^1";
-import type { CatalogExercise } from "../_shared/training.ts";
+import type { CatalogExercise, CoachPlan } from "../_shared/training.ts";
 import { coachCatalog, coachPlan, PLAN_ID } from "./fixtures.ts";
-import { buildProposal } from "./proposal.ts";
+import { buildProposal, namesUnfiledChange } from "./proposal.ts";
 
 const context = {
   plan: coachPlan(),
@@ -255,4 +255,113 @@ Deno.test("every problem is reported together", () => {
   ]));
   assertMentions(errors, "goblet_squat");
   assertMentions(errors, "made_up_move");
+});
+
+function namedPlan(extraDayThree: string[] = []): CoachPlan {
+  const exercise = (name: string) => ({
+    exerciseId: name.toLowerCase().replaceAll(" ", "_"),
+    name,
+    sets: 3,
+    reps: "10",
+    restSeconds: 60,
+  });
+  return {
+    id: PLAN_ID,
+    title: "Split",
+    version: 1,
+    days: [
+      {
+        dayNumber: 2,
+        weekday: 2,
+        title: "Day 2",
+        exercises: ["Dumbbell Shoulder Press", "One-arm Dumbbell Row"].map(
+          exercise,
+        ),
+      },
+      {
+        dayNumber: 3,
+        weekday: 4,
+        title: "Day 3",
+        exercises: [
+          "Dumbbell Floor Press",
+          "Renegade Row",
+          ...extraDayThree,
+        ].map(exercise),
+      },
+    ],
+  };
+}
+
+function catalogEntry(name: string): CatalogExercise {
+  return {
+    id: name.toLowerCase().replaceAll(" ", "_"),
+    name,
+    focus: "upper",
+    primaryMuscle: "Chest",
+    equipment: [],
+  };
+}
+
+const namedCatalog = ["Push-up", "Incline Push-up"].map(catalogEntry);
+
+Deno.test("a swap to a catalog-only exercise names an unfiled change", () => {
+  assert(namesUnfiledChange(
+    "swap Dumbbell Floor Press for Push-up",
+    namedPlan(),
+    namedCatalog,
+  ));
+});
+
+Deno.test("a swap across days names an unfiled change", () => {
+  assert(namesUnfiledChange(
+    "replace Renegade Row with One-arm Dumbbell Row",
+    namedPlan(),
+    namedCatalog,
+  ));
+});
+
+Deno.test("a new exercise alone names an unfiled change", () => {
+  assert(namesUnfiledChange("Try Push-ups instead", namedPlan(), namedCatalog));
+});
+
+Deno.test("naming the exercises of one day is not a change", () => {
+  assert(
+    !namesUnfiledChange(
+      "Today you do Dumbbell Floor Press and then Renegade Row.",
+      namedPlan(),
+      namedCatalog,
+    ),
+  );
+});
+
+Deno.test("naming no exercise is not a change", () => {
+  assert(
+    !namesUnfiledChange("Rest and sleep well", namedPlan(), namedCatalog),
+  );
+});
+
+Deno.test("exercise names match regardless of case", () => {
+  assert(namesUnfiledChange(
+    "swap dumbbell floor press for push-up",
+    namedPlan(),
+    namedCatalog,
+  ));
+});
+
+Deno.test("exercise names match in an Indonesian reply", () => {
+  assert(namesUnfiledChange(
+    "ganti Dumbbell Floor Press dengan Push-up",
+    namedPlan(),
+    namedCatalog,
+  ));
+});
+
+Deno.test("the longest name wins so Incline Push-up is not also Push-up", () => {
+  assert(
+    !namesUnfiledChange(
+      "Dumbbell Floor Press and Incline Push-up",
+      namedPlan(["Incline Push-up"]),
+      namedCatalog,
+    ),
+  );
 });

@@ -170,3 +170,29 @@ function summarize(
   }
   return `Coach updated ${dayTitle}`.slice(0, MAX_SUMMARY_LENGTH).trimEnd();
 }
+
+export function namesUnfiledChange(
+  text: string,
+  plan: CoachPlan,
+  catalog: CatalogExercise[],
+): boolean {
+  const dayNames = plan.days.map((day) =>
+    new Set(day.exercises.map((e) => e.name.toLowerCase()))
+  );
+  const names = new Set<string>();
+  for (const exercise of catalog) names.add(exercise.name.toLowerCase());
+  for (const day of dayNames) for (const name of day) names.add(name);
+  const longestFirst = [...names].filter((name) => name.length > 0)
+    .sort((a, b) => b.length - a.length);
+
+  let remaining = text.toLowerCase();
+  const found: string[] = [];
+  for (const name of longestFirst) {
+    const at = remaining.indexOf(name);
+    if (at === -1) continue;
+    found.push(name);
+    remaining = remaining.replaceAll(name, " ".repeat(name.length));
+  }
+  if (found.length === 0) return false;
+  return !dayNames.some((day) => found.every((name) => day.has(name)));
+}
