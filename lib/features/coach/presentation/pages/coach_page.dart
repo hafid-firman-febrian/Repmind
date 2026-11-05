@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/error_message.dart';
 import '../../../../core/theme/repmind_radius.dart';
 import '../../../../core/theme/theme_context.dart';
+import '../../../../core/widgets/app_snack_bar.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/secondary_button.dart';
 import '../../../plan/presentation/controllers/active_plan_controller.dart';
 import '../../../plan/presentation/widgets/active_plan_section.dart';
 import '../../../plan/presentation/widgets/start_plan_generation.dart';
+import '../../../profile/domain/models/ai_model.dart';
 import '../../../profile/presentation/controllers/profile_controller.dart';
+import '../../../profile/presentation/widgets/ai_model_sheet.dart';
 import '../../application/services/chat_context.dart';
 import '../../domain/models/chat_message_model.dart';
 import '../controllers/coach_chat_controller.dart';
@@ -233,6 +237,7 @@ class _MessageList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final reply = state.reply;
+    final model = ref.watch(profileControllerProvider).value?.aiModel;
     final messages = state.messages;
     final last = messages.isEmpty ? null : messages.last;
     final items = <Widget>[
@@ -263,6 +268,9 @@ class _MessageList extends ConsumerWidget {
             message: error.message,
             onRetry: () =>
                 ref.read(coachChatControllerProvider.notifier).retry(),
+            onChangeModel: error is CoachReplyFailure && model != null
+                ? () => _changeModel(context, ref, model)
+                : null,
           ),
         ],
       },
@@ -276,6 +284,23 @@ class _MessageList extends ConsumerWidget {
       itemBuilder: (_, index) => items[items.length - 1 - index],
     );
   }
+}
+
+Future<void> _changeModel(
+  BuildContext context,
+  WidgetRef ref,
+  AiModel current,
+) async {
+  final selected = await showAiModelSheet(context, current: current);
+  if (selected == null || selected == current || !context.mounted) return;
+  try {
+    await ref.read(profileControllerProvider.notifier).updateAiModel(selected);
+  } on AppException catch (error) {
+    if (context.mounted) showAppSnackBar(context, error.message);
+    return;
+  }
+  if (!context.mounted) return;
+  await ref.read(coachChatControllerProvider.notifier).retry();
 }
 
 Widget? _footerOf(

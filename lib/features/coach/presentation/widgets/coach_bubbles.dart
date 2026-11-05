@@ -111,21 +111,33 @@ class CoachBubble extends StatelessWidget {
 }
 
 class ReplyFailure extends StatelessWidget {
-  const ReplyFailure({super.key, required this.message, required this.onRetry});
+  const ReplyFailure({
+    super.key,
+    required this.message,
+    required this.onRetry,
+    this.onChangeModel,
+  });
 
   final String message;
   final VoidCallback onRetry;
+  final VoidCallback? onChangeModel;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final text = context.textStyles;
+    final style = TextButton.styleFrom(
+      foregroundColor: colors.violet,
+      textStyle: text.body.copyWith(fontWeight: FontWeight.w700),
+      minimumSize: const Size(48, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+    );
 
     return Align(
       alignment: Alignment.centerLeft,
-      child: Wrap(
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 8,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             message,
@@ -134,15 +146,21 @@ class ReplyFailure extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          TextButton(
-            onPressed: onRetry,
-            style: TextButton.styleFrom(
-              foregroundColor: colors.violet,
-              textStyle: text.body.copyWith(fontWeight: FontWeight.w700),
-              minimumSize: const Size(48, 40),
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-            ),
-            child: const Text('Try again'),
+          Wrap(
+            spacing: 8,
+            children: [
+              TextButton(
+                onPressed: onRetry,
+                style: style,
+                child: const Text('Try again'),
+              ),
+              if (onChangeModel != null)
+                TextButton(
+                  onPressed: onChangeModel,
+                  style: style,
+                  child: const Text('Change model'),
+                ),
+            ],
           ),
         ],
       ),

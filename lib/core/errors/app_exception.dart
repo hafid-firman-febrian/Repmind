@@ -46,16 +46,12 @@ final class PlanGenerationFailure extends AppException {
 
 final class CoachReplyFailure extends AppException {
   const CoachReplyFailure()
-    : super(
-        "The coach couldn't finish. Try again or pick another model in Profile.",
-      );
+    : super("The coach couldn't finish. Try again or change the model.");
 }
 
 final class CoachRetryUnavailable extends AppException {
   const CoachRetryUnavailable()
-    : super(
-        "The coach couldn't finish. Try again or pick another model in Profile.",
-      );
+    : super("The coach couldn't finish. Try again or change the model.");
 }
 
 final class ProposalOutdated extends AppException {

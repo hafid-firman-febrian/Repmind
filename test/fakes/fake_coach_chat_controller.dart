@@ -12,6 +12,7 @@ class FakeCoachChatController extends CoachChatController {
   var retryCalls = 0;
   var clearAutoReviewCalls = 0;
   AppException? applyError;
+  void Function()? onRetry;
 
   @override
   Future<CoachChatState> build() async => initial;
@@ -24,6 +25,7 @@ class FakeCoachChatController extends CoachChatController {
   @override
   Future<void> retry() async {
     retryCalls++;
+    onRetry?.call();
   }
 
   @override

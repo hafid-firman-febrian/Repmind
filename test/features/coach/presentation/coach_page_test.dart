@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repmind/core/errors/app_exception.dart';
 import 'package:repmind/core/router/app_routes.dart';
+import 'package:repmind/core/widgets/selectable_card.dart';
 import 'package:repmind/features/coach/application/services/coach_rules.dart';
 import 'package:repmind/features/coach/domain/models/chat_message_model.dart';
 import 'package:repmind/features/coach/presentation/controllers/coach_chat_controller.dart';
@@ -17,6 +18,7 @@ import 'package:repmind/features/coach/presentation/widgets/streaming_dots.dart'
 import 'package:repmind/features/plan/domain/models/workout_plan_model.dart';
 import 'package:repmind/features/plan/presentation/controllers/active_plan_controller.dart';
 import 'package:repmind/features/plan/presentation/controllers/plan_generation_controller.dart';
+import 'package:repmind/features/profile/domain/models/ai_model.dart';
 import 'package:repmind/features/profile/domain/models/profile_model.dart';
 import 'package:repmind/features/profile/presentation/controllers/profile_controller.dart';
 
@@ -61,6 +63,7 @@ void main() {
     bool noPlan = false,
     FakeCoachChatController? controller,
     Profile? profile,
+    FakeProfileController? profileController,
     bool tickers = true,
   }) async {
     useTallScreen(tester);
@@ -71,7 +74,9 @@ void main() {
       initialLocation: AppRoutes.coach,
       overrides: [
         profileControllerProvider.overrideWith(
-          () => FakeProfileController(profile ?? sampleProfile()),
+          () =>
+              profileController ??
+              FakeProfileController(profile ?? sampleProfile()),
         ),
         activePlanControllerProvider.overrideWith(
           () => FakeActivePlanController(noPlan ? null : plan ?? samplePlan()),
@@ -643,6 +648,133 @@ void main() {
 
       expect(find.byType(ReviewChangeSheet), findsNothing);
       expect(fake.clearAutoReviewCalls, 1);
+    });
+  });
+
+  group('changing the model after a failed reply', () {
+    const failed = CoachChatState(
+      messages: [],
+      reply: CoachReplyFailed(
+        text: '',
+        error: CoachReplyFailure(),
+        pendingText: 'How often should I train?',
+      ),
+    );
+
+    Future<(FakeCoachChatController, FakeProfileController)> pumpFailed(
+      WidgetTester tester, {
+      CoachChatState state = failed,
+      FakeProfileController? profile,
+    }) async {
+      final profileController =
+          profile ?? FakeProfileController(sampleProfile());
+      final fake = await pumpCoach(
+        tester,
+        state: state,
+        profileController: profileController,
+      );
+      return (fake, profileController);
+    }
+
+    testWidgets('a failed reply offers Change model', (tester) async {
+      await pumpFailed(tester);
+
+      expect(
+        find.text("The coach couldn't finish. Try again or change the model."),
+        findsOneWidget,
+      );
+      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text('Change model'), findsOneWidget);
+      for (final label in ['Try again', 'Change model']) {
+        expect(
+          tester.getSize(find.widgetWithText(TextButton, label)).height,
+          greaterThanOrEqualTo(kMinInteractiveDimension),
+        );
+      }
+    });
+
+    testWidgets('a network failure offers only Try again', (tester) async {
+      await pumpFailed(
+        tester,
+        state: const CoachChatState(
+          reply: CoachReplyFailed(
+            text: '',
+            error: NetworkFailure(),
+            pendingText: 'How often should I train?',
+          ),
+        ),
+      );
+
+      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text('Change model'), findsNothing);
+    });
+
+    testWidgets('choosing another model saves it and retries', (tester) async {
+      final (fake, profile) = await pumpFailed(tester);
+      var savedWhenRetried = -1;
+      fake.onRetry = () => savedWhenRetried = profile.updatedAiModels.length;
+
+      await tester.tap(find.text('Change model'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(SelectableCard, 'Gemini 3.5 Flash-Lite'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(profile.updatedAiModels, [AiModel.geminiFlashLite]);
+      expect(fake.retryCalls, 1);
+      expect(savedWhenRetried, 1);
+    });
+
+    testWidgets('closing the sheet does nothing', (tester) async {
+      final (fake, profile) = await pumpFailed(tester);
+
+      await tester.tap(find.text('Change model'));
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SelectableCard), findsNothing);
+      expect(profile.updatedAiModels, isEmpty);
+      expect(fake.retryCalls, 0);
+    });
+
+    testWidgets('choosing the current model does nothing', (tester) async {
+      final (fake, profile) = await pumpFailed(tester);
+
+      await tester.tap(find.text('Change model'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(SelectableCard, 'Gemini 3.8 Flash'));
+      await tester.pumpAndSettle();
+
+      expect(profile.updatedAiModels, isEmpty);
+      expect(fake.retryCalls, 0);
+    });
+
+    testWidgets('a failed save shows the message and does not retry', (
+      tester,
+    ) async {
+      final (fake, profile) = await pumpFailed(tester);
+      profile.aiModelError = const NetworkFailure();
+
+      await tester.tap(find.text('Change model'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(SelectableCard, 'Gemini 3.5 Flash-Lite'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(const NetworkFailure().message), findsOneWidget);
+      expect(fake.retryCalls, 0);
+    });
+
+    testWidgets('Change model is hidden when the profile is not loaded', (
+      tester,
+    ) async {
+      await pumpFailed(tester, profile: FakeProfileController(null));
+
+      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text('Change model'), findsNothing);
     });
   });
 }
