@@ -24,6 +24,28 @@ AppException mapToAppException(Object error) => switch (error) {
   _ => const UnknownFailure(),
 };
 
+Stream<T> guardStream<T>(
+  Stream<T> source, {
+  AppException Function(Object error) map = mapToAppException,
+}) async* {
+  try {
+    await for (final event in source) {
+      yield event;
+    }
+  } catch (error, stackTrace) {
+    final mapped = map(error);
+    if (mapped is UnknownFailure) {
+      log(
+        'Unexpected error',
+        name: 'repmind',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+    Error.throwWithStackTrace(mapped, stackTrace);
+  }
+}
+
 Future<T> runGuarded<T>(Future<T> Function() action) async {
   try {
     return await action();
