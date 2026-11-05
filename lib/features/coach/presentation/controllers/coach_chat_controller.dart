@@ -192,6 +192,11 @@ class CoachChatController extends _$CoachChatController {
 
     void fail(Object error) {
       if (settled) return;
+      if (error is CoachRetryUnavailable && alive()) {
+        settle();
+        ref.invalidateSelf();
+        return;
+      }
       final failure = error is AppException ? error : const CoachReplyFailure();
       _update(
         session,

@@ -82,6 +82,28 @@ void main() {
     }
   });
 
+  test('a 409 from retryMessage is CoachRetryUnavailable', () async {
+    when(
+      () => remote.openReply(any()),
+    ).thenThrow(const FunctionsHttpException(status: 409));
+
+    await expectLater(
+      repository.retryMessage(messageId: 'u-1', weekday: 1).toList(),
+      throwsA(isA<CoachRetryUnavailable>()),
+    );
+  });
+
+  test('other retryMessage failures stay CoachReplyFailure', () async {
+    when(
+      () => remote.openReply(any()),
+    ).thenThrow(const FunctionsHttpException(status: 502));
+
+    await expectLater(
+      repository.retryMessage(messageId: 'u-1', weekday: 1).toList(),
+      throwsA(isA<CoachReplyFailure>()),
+    );
+  });
+
   test('an error event in the stream is CoachReplyFailure', () async {
     when(() => remote.openReply(any())).thenAnswer(
       (_) async => _bytes(['data: {"type":"error","code":"save_failed"}\n\n']),

@@ -51,6 +51,13 @@ final class CoachReplyFailure extends AppException {
       );
 }
 
+final class CoachRetryUnavailable extends AppException {
+  const CoachRetryUnavailable()
+    : super(
+        "The coach couldn't finish. Try again or pick another model in Profile.",
+      );
+}
+
 final class ProposalOutdated extends AppException {
   const ProposalOutdated() : super('Your plan changed since this suggestion.');
 }

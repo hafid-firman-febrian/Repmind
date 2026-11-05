@@ -362,6 +362,50 @@ void main() {
     expect(current(container).messages.last.content, 'Answer');
   });
 
+  test('a retry the server refuses reloads the saved reply', () async {
+    var loads = 0;
+    when(() => repository.fetchMessages('user-1')).thenAnswer((_) async {
+      return loads++ == 0
+          ? [sampleCoachMessage(id: 'm1', role: 'user', content: 'Hello')]
+          : [
+              sampleCoachMessage(id: 'm1', role: 'user', content: 'Hello'),
+              sampleCoachMessage(id: 'a1', content: 'Saved answer'),
+            ];
+    });
+    when(
+      () => repository.retryMessage(messageId: 'm1', weekday: 4),
+    ).thenAnswer((_) => events.stream);
+    final container = createContainer();
+    await loaded(container);
+
+    final retrying = container
+        .read(coachChatControllerProvider.notifier)
+        .retry();
+    await pump();
+    events.addError(const CoachRetryUnavailable());
+    await retrying;
+    final state = await loaded(container);
+
+    expect(loads, 2);
+    expect(state.reply, isA<CoachReplyIdle>());
+    expect(state.messages.last.content, 'Saved answer');
+  });
+
+  test('a failed send stays failed and does not reload', () async {
+    streamSend('Hi coach');
+    final container = createContainer();
+    await loaded(container);
+    final notifier = container.read(coachChatControllerProvider.notifier);
+
+    final sending = notifier.send('Hi coach');
+    await pump();
+    events.addError(const CoachReplyFailure());
+    await sending;
+
+    expect(current(container).reply, isA<CoachReplyFailed>());
+    verify(() => repository.fetchMessages('user-1')).called(1);
+  });
+
   test('a confirmed proposal sets autoReviewMessageId', () async {
     streamSend('Yes, swap it');
     final container = createContainer();

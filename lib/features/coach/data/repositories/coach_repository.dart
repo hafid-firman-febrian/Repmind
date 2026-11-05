@@ -31,12 +31,15 @@ class CoachRepository {
   Stream<CoachStreamEvent> sendMessage({
     required String text,
     required int weekday,
-  }) => _reply({'message': text, 'weekday': weekday});
+  }) => _reply({'message': text, 'weekday': weekday}, map: _replyError);
 
   Stream<CoachStreamEvent> retryMessage({
     required String messageId,
     required int weekday,
-  }) => _reply({'retry_message_id': messageId, 'weekday': weekday});
+  }) => _reply({
+    'retry_message_id': messageId,
+    'weekday': weekday,
+  }, map: _retryError);
 
   Future<String> applyProposal(String messageId) => runGuarded(() async {
     try {
@@ -56,13 +59,20 @@ class CoachRepository {
   Future<String> generateTip({required String date, required int weekday}) =>
       runGuarded(() => _remote.generateTip(date: date, weekday: weekday));
 
-  Stream<CoachStreamEvent> _reply(Map<String, dynamic> body) =>
-      guardStream(_openReply(body), map: _replyError);
+  Stream<CoachStreamEvent> _reply(
+    Map<String, dynamic> body, {
+    required AppException Function(Object) map,
+  }) => guardStream(_openReply(body), map: map);
 
   Stream<CoachStreamEvent> _openReply(Map<String, dynamic> body) async* {
     final bytes = await _remote.openReply(body);
     yield* parseCoachStream(bytes.timeout(_idleTimeout));
   }
+
+  static AppException _retryError(Object error) =>
+      error is FunctionsHttpException && error.status == 409
+      ? const CoachRetryUnavailable()
+      : _replyError(error);
 
   static AppException _replyError(Object error) => switch (error) {
     FunctionsFetchException() => const NetworkFailure(),
