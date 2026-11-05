@@ -21,6 +21,7 @@ import {
   pendingProposal,
   PLAN_ID,
 } from "./fixtures.ts";
+import { toChatEvents } from "../_shared/gemini.ts";
 import { handleCoachChat } from "./handler.ts";
 import type { ChatHistoryMessage, CoachStore, PlanProposal } from "./types.ts";
 
@@ -609,6 +610,38 @@ Deno.test("a model error on the proposal retry", async () => {
 
   assertEquals(events.at(-1), { type: "error", code: "ai_unavailable" });
   assertEquals(store.assistantSaves, []);
+});
+
+class CutStreamModel implements ChatModel {
+  async *stream(_request: ChatModelRequest): AsyncGenerator<ChatEvent> {
+    const cut = [
+      { event_type: "step.start", index: 1, step: { type: "model_output" } },
+      {
+        event_type: "step.delta",
+        index: 1,
+        delta: { type: "text", text: "Since your shoulder feels tight" },
+      },
+      {
+        event_type: "step.delta",
+        index: 1,
+        delta: { type: "text", text: " today, stop if the" },
+      },
+    ];
+    yield* toChatEvents((async function* () {
+      for (const event of cut) yield await Promise.resolve(event);
+    })());
+  }
+}
+
+Deno.test("a cut Gemini stream fails the reply and saves no assistant message", async () => {
+  const store = new FakeStore();
+
+  const events = await converse(store, new CutStreamModel(), newMessage, 1);
+
+  assertEquals(types(events), ["started", "delta", "delta", "error"]);
+  assertEquals(events.at(-1), { type: "error", code: "ai_unavailable" });
+  assertEquals(store.assistantSaves, []);
+  assertEquals(store.userMessages, [newMessage.message]);
 });
 
 Deno.test("a failed assistant save reports save_failed", async () => {

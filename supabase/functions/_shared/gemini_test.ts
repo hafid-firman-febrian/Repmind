@@ -1,4 +1,4 @@
-import { assertEquals, assertRejects } from "jsr:@std/assert@^1";
+import { assert, assertEquals, assertRejects } from "jsr:@std/assert@^1";
 import type { ChatEvent } from "./chat_model.ts";
 import { toChatEvents } from "./gemini.ts";
 
@@ -131,4 +131,39 @@ Deno.test("toChatEvents throws on an error event", async () => {
     Error,
     "quota exceeded",
   );
+});
+
+async function collectUntilFailure(
+  events: unknown[],
+): Promise<{ yielded: ChatEvent[]; error: unknown }> {
+  const yielded: ChatEvent[] = [];
+  try {
+    for await (const event of toChatEvents(replay(events))) {
+      yielded.push(event);
+    }
+  } catch (error) {
+    return { yielded, error };
+  }
+  return { yielded, error: undefined };
+}
+
+Deno.test("toChatEvents throws when the stream ends without interaction.completed", async () => {
+  const cut = EVENTS.slice(0, 8);
+  const { yielded, error } = await collectUntilFailure(cut);
+
+  assertEquals(yielded, [
+    { type: "text", text: "Since your" },
+    { type: "text", text: " shoulder feels tight." },
+  ]);
+  assert(error instanceof Error);
+  await assertRejects(() => collect(cut), Error);
+});
+
+Deno.test("toChatEvents throws when a function call stream is cut", async () => {
+  const cut = EVENTS.slice(0, 12);
+  const { yielded, error } = await collectUntilFailure(cut);
+
+  assertEquals(yielded.filter((event) => event.type === "tool_call"), []);
+  assert(error instanceof Error);
+  await assertRejects(() => collect(cut), Error);
 });

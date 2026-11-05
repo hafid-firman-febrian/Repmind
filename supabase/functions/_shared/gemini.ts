@@ -85,6 +85,7 @@ export async function* toChatEvents(
   events: AsyncIterable<unknown>,
 ): AsyncGenerator<ChatEvent> {
   const calls = new Map<number, PendingCall>();
+  let completed = false;
   for await (const event of events) {
     const { event_type: type, index, step, delta, error } =
       event as StreamEvent;
@@ -95,6 +96,7 @@ export async function* toChatEvents(
           : "Gemini stream failed",
       );
     }
+    if (type === "interaction.completed") completed = true;
     if (index === undefined) continue;
     if (type === "step.start" && step?.type === "function_call") {
       calls.set(index, {
@@ -128,6 +130,7 @@ export async function* toChatEvents(
       }
     }
   }
+  if (!completed) throw new Error("Gemini stream ended before it completed");
 }
 
 function parseArguments(call: PendingCall): unknown {
