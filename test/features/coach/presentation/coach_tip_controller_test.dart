@@ -1,3 +1,4 @@
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -167,5 +168,110 @@ void main() {
       await container.read(coachTipControllerProvider.future),
       'Tip for plan 2',
     );
+  });
+
+  group('retry after a failure', () {
+    void stubNoSavedTip() {
+      when(
+        () => repository.fetchTip(
+          planId: any(named: 'planId'),
+          date: any(named: 'date'),
+        ),
+      ).thenAnswer((_) async => null);
+    }
+
+    test('a failed tip retries once after 60 seconds and then shows', () {
+      fakeAsync((async) {
+        stubNoSavedTip();
+        var calls = 0;
+        when(
+          () => repository.generateTip(
+            date: any(named: 'date'),
+            weekday: any(named: 'weekday'),
+          ),
+        ).thenAnswer((_) async {
+          if (calls++ == 0) throw const PlanGenerationFailure();
+          return 'Second try';
+        });
+        final container = createContainer();
+
+        async.elapse(const Duration(seconds: 1));
+        expect(container.read(coachTipControllerProvider).value, isNull);
+        expect(calls, 1);
+
+        async.elapse(const Duration(seconds: 58));
+        expect(calls, 1);
+
+        async.elapse(const Duration(seconds: 2));
+        expect(calls, 2);
+        expect(container.read(coachTipControllerProvider).value, 'Second try');
+      });
+    });
+
+    test('a second failure stops retrying', () {
+      fakeAsync((async) {
+        stubNoSavedTip();
+        when(
+          () => repository.generateTip(
+            date: any(named: 'date'),
+            weekday: any(named: 'weekday'),
+          ),
+        ).thenThrow(const PlanGenerationFailure());
+        final container = createContainer();
+
+        async.elapse(const Duration(minutes: 10));
+
+        verify(
+          () => repository.generateTip(date: '2026-11-05', weekday: 4),
+        ).called(2);
+        expect(container.read(coachTipControllerProvider).value, isNull);
+        expect(
+          container.read(coachTipControllerProvider),
+          isA<AsyncData<String?>>(),
+        );
+      });
+    });
+
+    test('a success schedules no retry', () {
+      fakeAsync((async) {
+        stubNoSavedTip();
+        when(
+          () => repository.generateTip(
+            date: any(named: 'date'),
+            weekday: any(named: 'weekday'),
+          ),
+        ).thenAnswer((_) async => 'Fresh tip');
+        final container = createContainer();
+
+        async.elapse(const Duration(minutes: 10));
+
+        verify(
+          () => repository.generateTip(date: '2026-11-05', weekday: 4),
+        ).called(1);
+        expect(container.read(coachTipControllerProvider).value, 'Fresh tip');
+      });
+    });
+
+    test('disposing cancels the pending retry', () {
+      fakeAsync((async) {
+        stubNoSavedTip();
+        when(
+          () => repository.generateTip(
+            date: any(named: 'date'),
+            weekday: any(named: 'weekday'),
+          ),
+        ).thenThrow(const PlanGenerationFailure());
+        final container = createContainer();
+
+        async.elapse(const Duration(seconds: 1));
+        container.dispose();
+        async.elapse(const Duration(minutes: 5));
+
+        verify(
+          () => repository.generateTip(date: '2026-11-05', weekday: 4),
+        ).called(1);
+        expect(async.pendingTimers, isEmpty);
+      });
+    });
   });
 }
