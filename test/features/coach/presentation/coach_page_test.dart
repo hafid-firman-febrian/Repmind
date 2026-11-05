@@ -12,6 +12,7 @@ import 'package:repmind/features/coach/presentation/pages/coach_page.dart';
 import 'package:repmind/features/coach/presentation/states/coach_chat_state.dart';
 import 'package:repmind/features/coach/presentation/widgets/coach_bubbles.dart';
 import 'package:repmind/features/coach/presentation/widgets/coach_input_bar.dart';
+import 'package:repmind/features/coach/presentation/widgets/review_change_sheet.dart';
 import 'package:repmind/features/coach/presentation/widgets/streaming_dots.dart';
 import 'package:repmind/features/plan/domain/models/workout_plan_model.dart';
 import 'package:repmind/features/plan/presentation/controllers/active_plan_controller.dart';
@@ -60,6 +61,7 @@ void main() {
     bool noPlan = false,
     FakeCoachChatController? controller,
     Profile? profile,
+    bool tickers = true,
   }) async {
     useTallScreen(tester);
     final fake = controller ?? FakeCoachChatController(state);
@@ -78,10 +80,18 @@ void main() {
         coachChatControllerProvider.overrideWith(() => fake),
       ],
       routes: [
-        GoRoute(path: AppRoutes.coach, builder: (_, _) => const CoachPage()),
+        GoRoute(
+          path: AppRoutes.coach,
+          builder: (_, _) =>
+              TickerMode(enabled: tickers, child: const CoachPage()),
+        ),
         GoRoute(
           path: AppRoutes.generating,
           builder: (_, _) => const Text('generating'),
+        ),
+        GoRoute(
+          path: AppRoutes.workoutDay,
+          builder: (_, state) => Text('day ${state.pathParameters['day']}'),
         ),
       ],
     );
@@ -418,5 +428,221 @@ void main() {
     expect(find.byType(UserBubble), findsNWidgets(2));
     expect(find.byType(CoachBubble), findsOneWidget);
     expect(find.text('How often should I train?'), findsOneWidget);
+  });
+
+  group('proposals', () {
+    final proposalMessage = sampleCoachMessage(id: 'c1', withProposal: true);
+    final otherPlanMessage = ChatMessage.fromJson(
+      chatMessageRow(
+        id: 'c1',
+        role: 'assistant',
+        content: "Here's the change I suggest.",
+        proposal: proposalRow(basedOnPlanId: 'plan-0'),
+      ),
+    );
+    final withoutDayTwo = WorkoutPlan.fromJson(
+      workoutPlanRow(
+        days: sampleDayRows().where((day) => day['day_number'] != 2).toList(),
+      ),
+    );
+
+    testWidgets(
+      'a pending proposal shows Review change, which opens the sheet',
+      (tester) async {
+        await pumpCoach(
+          tester,
+          state: CoachChatState(messages: [userMessage, proposalMessage]),
+        );
+
+        expect(find.text('Review change'), findsOneWidget);
+        expect(
+          find.text('Your plan has changed since this suggestion.'),
+          findsNothing,
+        );
+
+        await tester.tap(find.text('Review change'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(ReviewChangeSheet), findsOneWidget);
+        expect(find.text('UPPER BODY PUSH'), findsOneWidget);
+        expect(find.text('Apply as v2'), findsOneWidget);
+      },
+    );
+
+    testWidgets('applying from the sheet calls the controller', (tester) async {
+      final fake = await pumpCoach(
+        tester,
+        state: CoachChatState(messages: [userMessage, proposalMessage]),
+      );
+
+      await tester.tap(find.text('Review change'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Apply as v2'));
+      await tester.pumpAndSettle();
+
+      expect(fake.applyCalls, ['c1']);
+      expect(find.byType(ReviewChangeSheet), findsNothing);
+    });
+
+    testWidgets('an applied proposal shows Plan updated to v2 and View plan', (
+      tester,
+    ) async {
+      await pumpCoach(
+        tester,
+        plan: samplePlan(version: 2),
+        state: CoachChatState(
+          messages: [
+            userMessage,
+            sampleCoachMessage(
+              id: 'c1',
+              withProposal: true,
+              appliedPlanId: 'plan-2',
+              appliedPlanVersion: 2,
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('Plan updated to v2'), findsOneWidget);
+      expect(find.text('Review change'), findsNothing);
+
+      await tester.tap(find.text('View plan'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('day 2'), findsOneWidget);
+    });
+
+    testWidgets(
+      'an applied proposal without a known version says Plan updated',
+      (tester) async {
+        await pumpCoach(
+          tester,
+          state: CoachChatState(
+            messages: [
+              userMessage,
+              sampleCoachMessage(
+                id: 'c1',
+                withProposal: true,
+                appliedPlanId: 'plan-2',
+              ),
+            ],
+          ),
+        );
+
+        expect(find.text('Plan updated'), findsOneWidget);
+        expect(find.textContaining('Plan updated to'), findsNothing);
+        expect(find.text('View plan'), findsOneWidget);
+      },
+    );
+
+    testWidgets('an outdated proposal shows the muted note', (tester) async {
+      await pumpCoach(
+        tester,
+        state: CoachChatState(messages: [userMessage, otherPlanMessage]),
+      );
+
+      expect(
+        find.text('Your plan has changed since this suggestion.'),
+        findsOneWidget,
+      );
+      expect(find.text('Review change'), findsNothing);
+    });
+
+    testWidgets('a proposal for a day the plan no longer has is outdated', (
+      tester,
+    ) async {
+      await pumpCoach(
+        tester,
+        plan: withoutDayTwo,
+        state: CoachChatState(messages: [userMessage, proposalMessage]),
+      );
+
+      expect(
+        find.text('Your plan has changed since this suggestion.'),
+        findsOneWidget,
+      );
+      expect(find.text('Review change'), findsNothing);
+    });
+
+    testWidgets('with no plan the status shows above the generate button', (
+      tester,
+    ) async {
+      await pumpCoach(
+        tester,
+        noPlan: true,
+        state: CoachChatState(messages: [userMessage, otherPlanMessage]),
+      );
+
+      final note = find.text('Your plan has changed since this suggestion.');
+      final generate = find.text('Generate my plan');
+      expect(note, findsOneWidget);
+      expect(generate, findsOneWidget);
+      expect(
+        tester.getTopLeft(note).dy,
+        lessThan(tester.getTopLeft(generate).dy),
+      );
+    });
+
+    testWidgets('autoReviewMessageId opens the sheet once', (tester) async {
+      final fake = await pumpCoach(
+        tester,
+        state: CoachChatState(
+          messages: [userMessage, proposalMessage],
+          autoReviewMessageId: 'c1',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ReviewChangeSheet), findsOneWidget);
+      expect(fake.clearAutoReviewCalls, 1);
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ReviewChangeSheet), findsNothing);
+
+      fake.emit(
+        CoachChatState(
+          messages: [userMessage, proposalMessage],
+          autoReviewMessageId: 'c1',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ReviewChangeSheet), findsNothing);
+      expect(fake.clearAutoReviewCalls, 1);
+    });
+
+    testWidgets('autoReviewMessageId waits while the page is hidden', (
+      tester,
+    ) async {
+      final fake = await pumpCoach(
+        tester,
+        tickers: false,
+        state: CoachChatState(
+          messages: [userMessage, proposalMessage],
+          autoReviewMessageId: 'c1',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ReviewChangeSheet), findsNothing);
+      expect(fake.clearAutoReviewCalls, 0);
+    });
+
+    testWidgets('autoReviewMessageId on an outdated proposal opens nothing', (
+      tester,
+    ) async {
+      final fake = await pumpCoach(
+        tester,
+        state: CoachChatState(
+          messages: [userMessage, otherPlanMessage],
+          autoReviewMessageId: 'c1',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ReviewChangeSheet), findsNothing);
+      expect(fake.clearAutoReviewCalls, 1);
+    });
   });
 }

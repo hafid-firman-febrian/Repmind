@@ -18,6 +18,7 @@ import '../widgets/chat_context_chip.dart';
 import '../widgets/coach_bubbles.dart';
 import '../widgets/coach_empty_state.dart';
 import '../widgets/coach_input_bar.dart';
+import '../widgets/proposal_footer.dart';
 
 class CoachPage extends ConsumerStatefulWidget {
   const CoachPage({super.key});
@@ -28,6 +29,7 @@ class CoachPage extends ConsumerStatefulWidget {
 
 class _CoachPageState extends ConsumerState<CoachPage> {
   final _controller = TextEditingController();
+  String? _autoReviewed;
 
   @override
   void dispose() {
@@ -44,9 +46,31 @@ class _CoachPageState extends ConsumerState<CoachPage> {
     _controller.clear();
   }
 
+  void _scheduleAutoReview(CoachChatState state) {
+    final id = state.autoReviewMessageId;
+    if (id == null || id == _autoReviewed) return;
+    if (!TickerMode.valuesOf(context).enabled) return;
+    _autoReviewed = id;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final notifier = ref.read(coachChatControllerProvider.notifier);
+      final messages =
+          ref.read(coachChatControllerProvider).value?.messages ?? const [];
+      final message = messages.where((message) => message.id == id).firstOrNull;
+      notifier.clearAutoReview();
+      if (message == null) return;
+      await openReviewChange(context, ref, message);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final chat = ref.watch(coachChatControllerProvider);
+    final planState = ref.watch(activePlanControllerProvider);
+    final loaded = chat.value;
+    if (loaded != null && planState.hasValue && !planState.hasError) {
+      _scheduleAutoReview(loaded);
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -218,14 +242,15 @@ class _MessageList extends ConsumerWidget {
         else
           CoachBubble(
             text: message.content,
-            footer:
-                offerPlan && reply is CoachReplyIdle && identical(message, last)
-                ? PrimaryButton(
-                    label: 'Generate my plan',
-                    variant: PrimaryButtonVariant.ai,
-                    onPressed: () => startPlanGeneration(context, ref),
-                  )
-                : null,
+            footer: _footerOf(
+              context,
+              ref,
+              message,
+              offerPlan:
+                  offerPlan &&
+                  reply is CoachReplyIdle &&
+                  identical(message, last),
+            ),
           ),
       ...switch (reply) {
         CoachReplyIdle() => const <Widget>[],
@@ -251,4 +276,28 @@ class _MessageList extends ConsumerWidget {
       itemBuilder: (_, index) => items[items.length - 1 - index],
     );
   }
+}
+
+Widget? _footerOf(
+  BuildContext context,
+  WidgetRef ref,
+  ChatMessage message, {
+  required bool offerPlan,
+}) {
+  final hasProposal = message.proposal != null;
+  if (!hasProposal && !offerPlan) return null;
+  return Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (hasProposal) ProposalFooter(message: message),
+      if (hasProposal && offerPlan) const SizedBox(height: 8),
+      if (offerPlan)
+        PrimaryButton(
+          label: 'Generate my plan',
+          variant: PrimaryButtonVariant.ai,
+          onPressed: () => startPlanGeneration(context, ref),
+        ),
+    ],
+  );
 }
