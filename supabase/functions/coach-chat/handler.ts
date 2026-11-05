@@ -177,6 +177,7 @@ async function reply(input: ReplyInput): Promise<void> {
       send({ type: "error", code: "ai_invalid_output" });
       return;
     }
+    send({ type: "delta", text: FALLBACK_TEXT });
     content = FALLBACK_TEXT;
   }
 

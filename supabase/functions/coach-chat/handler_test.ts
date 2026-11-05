@@ -546,6 +546,19 @@ Deno.test("empty text with a valid proposal uses the fallback", async () => {
 
   const events = await converse(store, model);
 
+  assertEquals(deltas(events), [FALLBACK_TEXT]);
+  assertEquals(store.assistantSaves[0].content, FALLBACK_TEXT);
+  assertEquals(events.at(-1)!.type, "done");
+  assertEquals(events.at(-1)!.proposal !== null, true);
+});
+
+Deno.test("whitespace-only text with a valid proposal uses the fallback", async () => {
+  const store = new FakeStore();
+  const model = new FakeModel([[text("  \n"), toolCall(validArgs)]]);
+
+  const events = await converse(store, model);
+
+  assertEquals(deltas(events).at(-1), FALLBACK_TEXT);
   assertEquals(store.assistantSaves[0].content, FALLBACK_TEXT);
   assertEquals(events.at(-1)!.type, "done");
   assertEquals(events.at(-1)!.proposal !== null, true);
