@@ -1,6 +1,8 @@
 import 'package:mocktail/mocktail.dart';
 import 'package:repmind/features/auth/data/data_sources/google_auth_data_source.dart';
 import 'package:repmind/features/auth/data/repositories/auth_repository.dart';
+import 'package:repmind/features/coach/data/data_sources/coach_remote_data_source.dart';
+import 'package:repmind/features/coach/data/repositories/coach_repository.dart';
 import 'package:repmind/features/plan/data/data_sources/plan_remote_data_source.dart';
 import 'package:repmind/features/plan/data/repositories/plan_repository.dart';
 import 'package:repmind/features/profile/data/data_sources/avatar_picker.dart';
@@ -30,3 +32,7 @@ class MockAvatarPicker extends Mock implements AvatarPicker {}
 class MockPlanRemoteDataSource extends Mock implements PlanRemoteDataSource {}
 
 class MockPlanRepository extends Mock implements PlanRepository {}
+
+class MockCoachRemoteDataSource extends Mock implements CoachRemoteDataSource {}
+
+class MockCoachRepository extends Mock implements CoachRepository {}
