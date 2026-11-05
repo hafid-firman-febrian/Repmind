@@ -559,4 +559,273 @@ void main() {
       expect(current(container).applyingMessageId, isNull);
     });
   });
+
+  test('an unconfirmed proposal does not open the review', () async {
+    streamSend('Hi coach');
+    final container = createContainer();
+    await loaded(container);
+
+    final sending = container
+        .read(coachChatControllerProvider.notifier)
+        .send('Hi coach');
+    await pump();
+    events.add(
+      CoachDone(
+        messageId: 'a1',
+        proposal: sampleProposal(),
+        userConfirmed: false,
+      ),
+    );
+    await sending;
+
+    expect(current(container).messages.last.proposal, isNotNull);
+    expect(current(container).autoReviewMessageId, isNull);
+  });
+
+  test('a confirmation without a proposal does not open the review', () async {
+    streamSend('Yes, swap it');
+    final container = createContainer();
+    await loaded(container);
+
+    final sending = container
+        .read(coachChatControllerProvider.notifier)
+        .send('Yes, swap it');
+    await pump();
+    events.add(
+      const CoachDone(messageId: 'a1', proposal: null, userConfirmed: true),
+    );
+    await sending;
+
+    expect(current(container).autoReviewMessageId, isNull);
+  });
+
+  test('send completes when the user changes mid-stream', () async {
+    streamSend('Hi coach');
+    final container = createContainer();
+    await loaded(container);
+    final sending = container
+        .read(coachChatControllerProvider.notifier)
+        .send('Hi coach');
+    await pump();
+    when(
+      () => repository.fetchMessages('user-2'),
+    ).thenAnswer((_) async => <ChatMessage>[]);
+
+    container.read(_userSwitchProvider.notifier).set('user-2');
+    await loaded(container);
+
+    await sending.timeout(const Duration(seconds: 2));
+  });
+
+  test('a history that loads late for the old user is discarded', () async {
+    final slow = Completer<List<ChatMessage>>();
+    when(
+      () => repository.fetchMessages('user-1'),
+    ).thenAnswer((_) => slow.future);
+    when(() => repository.fetchMessages('user-2')).thenAnswer(
+      (_) async => [sampleCoachMessage(id: 'b1', content: 'New answer')],
+    );
+    final container = createContainer();
+    await pump();
+
+    container.read(_userSwitchProvider.notifier).set('user-2');
+    await loaded(container);
+    slow.complete([sampleCoachMessage(id: 'a-old', content: 'OLD ANSWER')]);
+    await pump();
+
+    expect(current(container).messages.map((message) => message.id), ['b1']);
+  });
+
+  test('a finished stream does not drop the next stream handle', () async {
+    final second = StreamController<CoachStreamEvent>();
+    addTearDown(second.close);
+    streamSend('one');
+    when(
+      () => repository.sendMessage(text: 'two', weekday: 4),
+    ).thenAnswer((_) => second.stream);
+    final container = createContainer();
+    await loaded(container);
+    final notifier = container.read(coachChatControllerProvider.notifier);
+    final first = notifier.send('one');
+    await pump();
+    events.add(
+      const CoachDone(messageId: 'a1', proposal: null, userConfirmed: false),
+    );
+    await first;
+    final reply = notifier.send('two');
+    await pump();
+    expect(second.hasListener, isTrue);
+
+    unawaited(events.close());
+    await pump();
+    when(
+      () => repository.fetchMessages('user-2'),
+    ).thenAnswer((_) async => <ChatMessage>[]);
+    container.read(_userSwitchProvider.notifier).set('user-2');
+    await loaded(container);
+
+    expect(second.hasListener, isFalse);
+    await reply.timeout(const Duration(seconds: 2));
+  });
+
+  group('after a direct user change', () {
+    Future<ProviderContainer> loadedAsUserOne() async {
+      when(() => repository.fetchMessages('user-1')).thenAnswer(
+        (_) async => [
+          sampleCoachMessage(id: 'm1', role: 'user', content: 'OLD SECRET'),
+          sampleCoachMessage(
+            id: 'm2',
+            content: 'OLD ANSWER',
+            withProposal: true,
+          ),
+        ],
+      );
+      final container = createContainer();
+      await loaded(container);
+      return container;
+    }
+
+    Future<void> switchToUserTwo(ProviderContainer container) async {
+      container.read(_userSwitchProvider.notifier).set('user-2');
+      await pump();
+    }
+
+    test('send is ignored while the new history loads', () async {
+      final container = await loadedAsUserOne();
+      final reload = Completer<List<ChatMessage>>();
+      when(
+        () => repository.fetchMessages('user-2'),
+      ).thenAnswer((_) => reload.future);
+      streamSend('as user 2');
+
+      await switchToUserTwo(container);
+      expect(container.read(coachChatControllerProvider).isLoading, isTrue);
+      unawaited(
+        container.read(coachChatControllerProvider.notifier).send('as user 2'),
+      );
+      await pump();
+      reload.complete([]);
+      final state = await loaded(container);
+
+      verifyNever(
+        () => repository.sendMessage(
+          text: any(named: 'text'),
+          weekday: any(named: 'weekday'),
+        ),
+      );
+      expect(events.hasListener, isFalse);
+      expect(state.messages, isEmpty);
+      expect(state.reply, isA<CoachReplyIdle>());
+    });
+
+    test('send and apply are ignored after the new history fails', () async {
+      final container = await loadedAsUserOne();
+      when(
+        () => repository.fetchMessages('user-2'),
+      ).thenThrow(const NetworkFailure());
+      streamSend('as user 2');
+      final notifier = container.read(coachChatControllerProvider.notifier);
+
+      await switchToUserTwo(container);
+      await pump();
+      expect(container.read(coachChatControllerProvider).hasError, isTrue);
+      unawaited(notifier.send('as user 2'));
+      unawaited(notifier.applyProposal('m2'));
+      await pump();
+
+      verifyNever(
+        () => repository.sendMessage(
+          text: any(named: 'text'),
+          weekday: any(named: 'weekday'),
+        ),
+      );
+      verifyNever(() => repository.applyProposal(any()));
+      expect(container.read(coachChatControllerProvider).hasError, isTrue);
+      expect(events.hasListener, isFalse);
+    });
+
+    test('retry is ignored while the new history loads', () async {
+      when(() => repository.fetchMessages('user-1')).thenAnswer(
+        (_) async => [
+          sampleCoachMessage(id: 'm1', role: 'user', content: 'Hello'),
+        ],
+      );
+      final container = createContainer();
+      await loaded(container);
+      final reload = Completer<List<ChatMessage>>();
+      when(
+        () => repository.fetchMessages('user-2'),
+      ).thenAnswer((_) => reload.future);
+
+      await switchToUserTwo(container);
+      await container.read(coachChatControllerProvider.notifier).retry();
+
+      verifyNever(
+        () => repository.retryMessage(
+          messageId: any(named: 'messageId'),
+          weekday: any(named: 'weekday'),
+        ),
+      );
+      expect(container.read(coachChatControllerProvider).isLoading, isTrue);
+      reload.complete([]);
+    });
+
+    test('clearAutoReview is ignored while the new history loads', () async {
+      streamSend('Yes, swap it');
+      final container = createContainer();
+      await loaded(container);
+      final sending = container
+          .read(coachChatControllerProvider.notifier)
+          .send('Yes, swap it');
+      await pump();
+      events.add(
+        CoachDone(
+          messageId: 'a1',
+          proposal: sampleProposal(),
+          userConfirmed: true,
+        ),
+      );
+      await sending;
+      final reload = Completer<List<ChatMessage>>();
+      when(
+        () => repository.fetchMessages('user-2'),
+      ).thenAnswer((_) => reload.future);
+
+      await switchToUserTwo(container);
+      container.read(coachChatControllerProvider.notifier).clearAutoReview();
+
+      expect(container.read(coachChatControllerProvider).isLoading, isTrue);
+      reload.complete([]);
+    });
+
+    test('a stale apply does not touch the new account', () async {
+      final pending = Completer<String>();
+      when(
+        () => repository.applyProposal('m2'),
+      ).thenAnswer((_) => pending.future);
+      when(
+        () => planRepository.fetchActivePlan('user-2'),
+      ).thenAnswer((_) async => samplePlan());
+      when(() => repository.fetchMessages('user-2')).thenAnswer(
+        (_) async => [
+          sampleCoachMessage(id: 'm1', role: 'user', content: 'Swap it'),
+          sampleCoachMessage(id: 'm2', withProposal: true),
+        ],
+      );
+      final container = await loadedAsUserOne();
+      final applying = container
+          .read(coachChatControllerProvider.notifier)
+          .applyProposal('m2');
+      await pump();
+
+      container.read(_userSwitchProvider.notifier).set('user-2');
+      await loaded(container);
+      pending.complete('plan-2');
+      await applying;
+
+      final state = current(container);
+      expect(state.messages.last.appliedPlanId, isNull);
+      expect(state.applyingMessageId, isNull);
+    });
+  });
 }

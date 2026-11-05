@@ -54,8 +54,13 @@ class CoachChatController extends _$CoachChatController {
     );
   }
 
+  CoachChatState? get _ready => switch (state) {
+    AsyncData(:final value) => value,
+    _ => null,
+  };
+
   Future<void> send(String text) async {
-    final current = state.value;
+    final current = _ready;
     if (current == null || current.reply is CoachReplyStreaming) return;
     if (!CoachRules.canSend(text)) return;
     final trimmed = text.trim();
@@ -83,7 +88,7 @@ class CoachChatController extends _$CoachChatController {
   }
 
   Future<void> retry() async {
-    final current = state.value;
+    final current = _ready;
     if (current == null) return;
     final reply = current.reply;
     if (reply is! CoachReplyFailed) return;
@@ -105,7 +110,7 @@ class CoachChatController extends _$CoachChatController {
   }
 
   Future<void> applyProposal(String messageId) async {
-    final current = state.value;
+    final current = _ready;
     if (current == null || current.applyingMessageId != null) return;
     final session = _session;
     state = AsyncData(current.copyWith(applyingMessageId: messageId));
@@ -138,7 +143,7 @@ class CoachChatController extends _$CoachChatController {
   }
 
   void clearAutoReview() {
-    final current = state.value;
+    final current = _ready;
     if (current == null || current.autoReviewMessageId == null) return;
     state = AsyncData(current.copyWith(autoReviewMessageId: null));
   }
@@ -152,7 +157,7 @@ class CoachChatController extends _$CoachChatController {
     CoachChatState Function(CoachChatState) change,
   ) {
     if (!ref.mounted || !identical(session, _session)) return;
-    final current = state.value;
+    final current = _ready;
     if (current == null) return;
     state = AsyncData(change(current));
   }
@@ -163,7 +168,7 @@ class CoachChatController extends _$CoachChatController {
     required String? userMessageId,
     required Stream<CoachStreamEvent> Function(int weekday) open,
   }) {
-    final chat = state.value;
+    final chat = _ready;
     if (chat == null) return Future.value();
     var targetId = chat.messages.last.id;
     var startedId = userMessageId;
@@ -171,12 +176,17 @@ class CoachChatController extends _$CoachChatController {
     var settled = false;
     final finished = Completer<void>();
     _finished = finished;
+    StreamSubscription<CoachStreamEvent>? subscription;
 
     bool alive() => ref.mounted && identical(session, _session);
 
     void settle() {
       settled = true;
-      _subscription = null;
+      final own = subscription;
+      if (own != null) {
+        unawaited(own.cancel());
+        if (identical(_subscription, own)) _subscription = null;
+      }
       if (!finished.isCompleted) finished.complete();
     }
 
@@ -205,7 +215,7 @@ class CoachChatController extends _$CoachChatController {
       return finished.future;
     }
 
-    _subscription = stream.listen(
+    subscription = _subscription = stream.listen(
       (event) {
         if (!alive() || settled) return;
         switch (event) {
