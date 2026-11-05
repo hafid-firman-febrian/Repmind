@@ -43,8 +43,8 @@ void main() {
     final bytes = utf8.encode('data: {"type":"delta","text":"Bahu 💪"}\n\n');
     final events = await parseCoachStream(
       Stream.fromIterable([
-        bytes.sublist(0, bytes.length - 8),
-        bytes.sublist(bytes.length - 8),
+        bytes.sublist(0, bytes.length - 6),
+        bytes.sublist(bytes.length - 6),
         ...[
           utf8.encode(
             'data: {"type":"done","message_id":"m","proposal":null,"user_confirmed":false}\n\n',
