@@ -35,8 +35,11 @@ String daySubtitle(PlanDay day) =>
 
 String dayWatermark(PlanDay day) => day.dayNumber.toString().padLeft(2, '0');
 
+String doseLabel(int sets, String reps) =>
+    '$sets × ${reps.replaceAll('-', '–')}';
+
 String exerciseDose(PlanExercise planExercise) =>
-    '${planExercise.sets} × ${planExercise.reps.replaceAll('-', '–')}';
+    doseLabel(planExercise.sets, planExercise.reps);
 
 String restLabel(PlanExercise planExercise) =>
     'Rest ${planExercise.restSeconds}s';
