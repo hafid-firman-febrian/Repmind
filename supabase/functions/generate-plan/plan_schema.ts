@@ -1,21 +1,8 @@
 import { z } from "npm:zod@4.6.7";
-import { WORKOUT_FOCUSES } from "./types.ts";
+import { REPS_PATTERN, WORKOUT_FOCUSES } from "../_shared/training.ts";
 
-export const REPS_PATTERN = /^[0-9]{1,3}(-[0-9]{1,3})?s?$/;
-
-const GEMINI_SCHEMA_KEYWORDS = new Set([
-  "type",
-  "properties",
-  "required",
-  "items",
-  "enum",
-  "minimum",
-  "maximum",
-  "minItems",
-  "maxItems",
-  "description",
-  "additionalProperties",
-]);
+export { toGeminiSchema } from "../_shared/gemini_schema.ts";
+export { REPS_PATTERN };
 
 export function planOutputSchema(exerciseIds: string[], daysPerWeek: number) {
   const exercise = z.object({
@@ -42,39 +29,3 @@ export function planOutputSchema(exerciseIds: string[], daysPerWeek: number) {
 export type PlanOutputSchema = ReturnType<typeof planOutputSchema>;
 
 export type PlanOutput = z.infer<PlanOutputSchema>;
-
-export function toGeminiSchema(
-  schema: PlanOutputSchema,
-): Record<string, unknown> {
-  return keepSupportedKeywords(z.toJSONSchema(schema)) as Record<
-    string,
-    unknown
-  >;
-}
-
-function keepSupportedKeywords(node: unknown): unknown {
-  if (Array.isArray(node)) return node.map(keepSupportedKeywords);
-  if (node === null || typeof node !== "object") return node;
-  const result: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(node)) {
-    if (!GEMINI_SCHEMA_KEYWORDS.has(key)) continue;
-    result[key] = key === "properties"
-      ? Object.fromEntries(
-        Object.entries(value as Record<string, unknown>).map((
-          [name, property],
-        ) => [
-          name,
-          keepSupportedKeywords(
-            name === "exercise_id" ? withoutEnum(property) : property,
-          ),
-        ]),
-      )
-      : keepSupportedKeywords(value);
-  }
-  return result;
-}
-
-function withoutEnum(property: unknown): unknown {
-  const { enum: _exerciseIds, ...rest } = property as Record<string, unknown>;
-  return rest;
-}

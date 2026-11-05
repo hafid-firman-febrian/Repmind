@@ -1,24 +1,16 @@
 import type { AiModelKey } from "../_shared/ai_models.ts";
+import type {
+  CatalogExercise,
+  PlanProfile,
+  WorkoutFocus,
+} from "../_shared/training.ts";
 
-export const WORKOUT_FOCUSES = ["upper", "lower", "core", "full_body"] as const;
-
-export type WorkoutFocus = (typeof WORKOUT_FOCUSES)[number];
-
-export interface PlanProfile {
-  goal: string;
-  level: string;
-  daysPerWeek: number;
-  equipment: string[];
-  aiModel: AiModelKey;
-}
-
-export interface CatalogExercise {
-  id: string;
-  name: string;
-  focus: WorkoutFocus;
-  primaryMuscle: string;
-  equipment: string[];
-}
+export {
+  type CatalogExercise,
+  type PlanProfile,
+  WORKOUT_FOCUSES,
+  type WorkoutFocus,
+} from "../_shared/training.ts";
 
 export interface ActivePlanExercise {
   exerciseId: string;

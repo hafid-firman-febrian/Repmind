@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2.117.3";
-import { isAiModelKey } from "../_shared/ai_models.ts";
+import {
+  readCatalog,
+  readProfile,
+  readUserId,
+} from "../_shared/training_store.ts";
 import type {
   ActivePlanSummary,
   CatalogExercise,
@@ -8,23 +12,6 @@ import type {
   SavePlanPayload,
   WorkoutFocus,
 } from "./types.ts";
-
-interface ProfileRow {
-  goal: string | null;
-  level: string | null;
-  days_per_week: number | null;
-  equipment: string[];
-  ai_model: string;
-  onboarded_at: string | null;
-}
-
-interface ExerciseRow {
-  id: string;
-  name: string;
-  focus: WorkoutFocus;
-  primary_muscle: string;
-  equipment: string[];
-}
 
 interface PlanExerciseRow {
   position: number;
@@ -56,51 +43,16 @@ export class SupabasePlanStore implements PlanStore {
     private readonly accessToken: string | null,
   ) {}
 
-  async userId(): Promise<string | null> {
-    if (this.accessToken === null) return null;
-    const { data, error } = await this.client.auth.getUser(this.accessToken);
-    if (error || !data.user) return null;
-    return data.user.id;
+  userId(): Promise<string | null> {
+    return readUserId(this.client, this.accessToken);
   }
 
-  async profile(userId: string): Promise<PlanProfile | null> {
-    const { data, error } = await this.client
-      .from("profiles")
-      .select("goal, level, days_per_week, equipment, ai_model, onboarded_at")
-      .eq("id", userId)
-      .maybeSingle();
-    if (error) throw error;
-    const row = data as ProfileRow | null;
-    if (
-      row === null || row.onboarded_at === null || row.goal === null ||
-      row.level === null || row.days_per_week === null ||
-      !isAiModelKey(row.ai_model)
-    ) {
-      return null;
-    }
-    return {
-      goal: row.goal,
-      level: row.level,
-      daysPerWeek: row.days_per_week,
-      equipment: row.equipment,
-      aiModel: row.ai_model,
-    };
+  profile(userId: string): Promise<PlanProfile | null> {
+    return readProfile(this.client, userId);
   }
 
-  async catalog(equipment: string[]): Promise<CatalogExercise[]> {
-    const { data, error } = await this.client
-      .from("exercises")
-      .select("id, name, focus, primary_muscle, equipment")
-      .containedBy("equipment", equipment)
-      .order("id");
-    if (error) throw error;
-    return (data as ExerciseRow[]).map((row) => ({
-      id: row.id,
-      name: row.name,
-      focus: row.focus,
-      primaryMuscle: row.primary_muscle,
-      equipment: row.equipment,
-    }));
+  catalog(equipment: string[]): Promise<CatalogExercise[]> {
+    return readCatalog(this.client, equipment);
   }
 
   async activePlan(userId: string): Promise<ActivePlanSummary | null> {

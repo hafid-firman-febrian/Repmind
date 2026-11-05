@@ -1,4 +1,4 @@
-import { weekdayName } from "./schedule.ts";
+import { humanize, weekdayName } from "../_shared/training.ts";
 import type {
   ActivePlanSummary,
   CatalogExercise,
@@ -68,10 +68,6 @@ export function buildRetryPrompt(prompt: string, errors: string[]): string {
     ...errors.map((error) => `- ${error}`),
     "Fix every problem and answer again with the full plan.",
   ].join("\n");
-}
-
-function humanize(value: string): string {
-  return value.replaceAll("_", " ");
 }
 
 function catalogLine(exercise: CatalogExercise): string {

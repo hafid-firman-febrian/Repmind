@@ -6,16 +6,6 @@ const WEEKDAYS_BY_DAY_COUNT: Record<number, number[]> = {
   6: [1, 2, 3, 4, 5, 6],
 };
 
-const WEEKDAY_NAMES = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
-
 export function weekdaysFor(daysPerWeek: number): number[] {
   const weekdays = WEEKDAYS_BY_DAY_COUNT[daysPerWeek];
   if (!weekdays) {
@@ -26,6 +16,4 @@ export function weekdaysFor(daysPerWeek: number): number[] {
   return [...weekdays];
 }
 
-export function weekdayName(weekday: number): string {
-  return WEEKDAY_NAMES[weekday - 1];
-}
+export { weekdayName } from "../_shared/training.ts";
