@@ -446,6 +446,24 @@ Deno.test("a confirmed tool call sets user_confirmed", async () => {
   );
 });
 
+Deno.test("a malformed saved suggestion is not waiting for an answer", async () => {
+  const malformed = { ...pendingProposal() } as Record<string, unknown>;
+  delete malformed.changes;
+  const messages = [
+    history("assistant", "Swap?", {
+      proposal: malformed as unknown as PlanProposal,
+    }),
+  ];
+  const model = new FakeModel([[text("Hi")]]);
+
+  const events = await converse(new FakeStore({ messages }), model);
+
+  assertEquals(events.at(-1)!.type, "done");
+  assert(
+    !model.requests[0].prompt.includes("## Suggestion waiting for an answer"),
+  );
+});
+
 Deno.test("an applied or outdated suggestion is not waiting for an answer", async () => {
   const applied = [
     history("assistant", "Swap?", {

@@ -287,7 +287,8 @@ function findPending(
   if (
     latest === undefined || latest.proposal === null ||
     latest.appliedPlanId !== null ||
-    latest.proposal.based_on_plan_id !== plan.id
+    latest.proposal.based_on_plan_id !== plan.id ||
+    !Array.isArray(latest.proposal.changes)
   ) {
     return null;
   }
