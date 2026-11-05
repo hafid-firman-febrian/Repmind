@@ -22,6 +22,8 @@ import { PROPOSE_PLAN_CHANGE } from "./tool.ts";
 import type { ChatHistoryMessage, CoachStore, PlanProposal } from "./types.ts";
 
 const HISTORY_LIMIT = 20;
+const DEFAULT_RETRY_DELAY_MS = 1500;
+const RATE_LIMITED = 429;
 const MAX_REPLY_CHARS = 8000;
 const FALLBACK_TEXT = "Here's the change I suggest.";
 const FAILURE_NOTE = "I couldn't prepare that change. Try asking again.";
@@ -34,6 +36,7 @@ const TEXT_BUDGET = MAX_REPLY_CHARS - NOTE_SEPARATOR.length -
 export interface CoachChatDeps {
   store: CoachStore;
   model: ChatModel;
+  retryDelayMs?: number;
 }
 
 interface Collected {
@@ -59,6 +62,7 @@ export async function handleCoachChat(
   if (body === null) return errorResponse(400, "invalid_request");
 
   const { store, model } = deps;
+  const retryDelayMs = deps.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS;
   const userId = await store.userId();
   if (userId === null) return errorResponse(401, "unauthorized");
 
@@ -126,6 +130,7 @@ export async function handleCoachChat(
         userId,
         modelRequest,
         context,
+        retryDelayMs,
       });
     } catch (error) {
       if (signal.aborted) return;
@@ -143,15 +148,38 @@ interface ReplyInput {
   userId: string;
   modelRequest: ChatModelRequest;
   context: ProposalContext | null;
+  retryDelayMs: number;
 }
 
 async function reply(input: ReplyInput): Promise<void> {
-  const { send, signal, store, model, userId, modelRequest, context } = input;
-  const first = await collect(
+  const {
+    send,
+    signal,
+    store,
     model,
-    { ...modelRequest, signal },
-    (text) => send({ type: "delta", text }),
-  );
+    userId,
+    modelRequest,
+    context,
+    retryDelayMs,
+  } = input;
+  let forwarded = false;
+  const forward = (text: string) => {
+    forwarded = true;
+    send({ type: "delta", text });
+  };
+  const firstRequest = { ...modelRequest, signal };
+  let first: Collected;
+  try {
+    first = await collect(model, firstRequest, forward);
+  } catch (error) {
+    if (signal.aborted || forwarded || statusOf(error) === RATE_LIMITED) {
+      throw error;
+    }
+    console.warn("Gemini request failed, retrying once", error);
+    await pause(retryDelayMs, signal);
+    if (signal.aborted) return;
+    first = await collect(model, firstRequest, forward);
+  }
   if (signal.aborted) return;
 
   const resolution = await resolveProposal(
@@ -205,6 +233,24 @@ async function reply(input: ReplyInput): Promise<void> {
     message_id: messageId,
     proposal: resolution.proposal,
     user_confirmed: resolution.userConfirmed,
+  });
+}
+
+function statusOf(error: unknown): unknown {
+  return typeof error === "object" && error !== null && "status" in error
+    ? error.status
+    : undefined;
+}
+
+function pause(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    const done = () => {
+      clearTimeout(timer);
+      signal.removeEventListener("abort", done);
+      resolve();
+    };
+    const timer = setTimeout(done, ms);
+    signal.addEventListener("abort", done);
   });
 }
 

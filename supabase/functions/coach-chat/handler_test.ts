@@ -226,7 +226,11 @@ async function converse(
   console.warn = (...args: unknown[]) => void logs.push(args);
   let events: Array<Record<string, unknown>>;
   try {
-    const response = await handleCoachChat(post(body), { store, model });
+    const response = await handleCoachChat(post(body), {
+      store,
+      model,
+      retryDelayMs: 0,
+    });
     events = await readEvents(response);
   } finally {
     console.error = originalError;
@@ -595,12 +599,117 @@ Deno.test("empty text without a proposal fails", async () => {
 
 Deno.test("a model error before text", async () => {
   const store = new FakeStore();
-  const model = new FakeModel([[new Error("quota exceeded")]]);
+  const model = new FakeModel([
+    [new Error("quota exceeded")],
+    [new Error("quota exceeded")],
+  ]);
+
+  const events = await converse(store, model, newMessage, 2);
+
+  assertEquals(model.requests.length, 2);
+  assertEquals(types(events), ["started", "error"]);
+  assertEquals(events.at(-1), { type: "error", code: "ai_unavailable" });
+  assertEquals(store.assistantSaves, []);
+  assertEquals(store.userMessages, [newMessage.message]);
+});
+
+Deno.test("a model error before any text retries once and succeeds", async () => {
+  const store = new FakeStore();
+  const model = new FakeModel([
+    [new Error("503 unavailable")],
+    [text("Ease "), text("off today.")],
+  ]);
 
   const events = await converse(store, model, newMessage, 1);
 
+  assertEquals(model.requests.length, 2);
+  assertEquals(types(events), ["started", "delta", "delta", "done"]);
+  assertEquals(deltas(events), ["Ease ", "off today."]);
+  assertEquals(store.userMessages, [newMessage.message]);
+  assertEquals(store.assistantSaves, [{
+    content: "Ease off today.",
+    proposal: null,
+  }]);
+});
+
+Deno.test("a second failure before any text reports ai_unavailable", async () => {
+  const store = new FakeStore();
+  const model = new FakeModel([
+    [new Error("503 unavailable")],
+    [new Error("503 unavailable")],
+  ]);
+
+  const events = await converse(store, model, newMessage, 2);
+
+  assertEquals(model.requests.length, 2);
   assertEquals(types(events), ["started", "error"]);
   assertEquals(events.at(-1), { type: "error", code: "ai_unavailable" });
+  assertEquals(store.assistantSaves, []);
+  assertEquals(store.userMessages, [newMessage.message]);
+});
+
+Deno.test("a 429 is not retried", async () => {
+  const store = new FakeStore();
+  const model = new FakeModel([
+    [Object.assign(new Error("quota exceeded"), { status: 429 })],
+    [text("never asked for")],
+  ]);
+
+  const events = await converse(store, model, newMessage, 1);
+
+  assertEquals(model.requests.length, 1);
+  assertEquals(types(events), ["started", "error"]);
+  assertEquals(events.at(-1), { type: "error", code: "ai_unavailable" });
+  assertEquals(store.assistantSaves, []);
+});
+
+Deno.test("a failure after text is not retried", async () => {
+  const store = new FakeStore();
+  const model = new FakeModel([
+    [text("Half an ans"), new Error("dropped")],
+    [text("never asked for")],
+  ]);
+
+  const events = await converse(store, model, newMessage, 1);
+
+  assertEquals(model.requests.length, 1);
+  assertEquals(types(events), ["started", "delta", "error"]);
+  assertEquals(events.at(-1), { type: "error", code: "ai_unavailable" });
+  assertEquals(store.assistantSaves, []);
+});
+
+Deno.test("cancelling during the retry wait sends no second request", async () => {
+  const store = new FakeStore();
+  const model = new FakeModel([
+    [new Error("503 unavailable")],
+    [text("never asked for")],
+  ]);
+  const logs: unknown[][] = [];
+  const originalError = console.error;
+  const originalWarn = console.warn;
+  let waiting!: () => void;
+  const warned = new Promise<void>((resolve) => waiting = resolve);
+  console.error = (...args: unknown[]) => void logs.push(args);
+  console.warn = (...args: unknown[]) => {
+    logs.push(args);
+    waiting();
+  };
+  try {
+    const response = await handleCoachChat(post(newMessage), {
+      store,
+      model,
+      retryDelayMs: 60_000,
+    });
+    await warned;
+    await response.body!.cancel();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  } finally {
+    console.error = originalError;
+    console.warn = originalWarn;
+  }
+
+  assertEquals(model.requests.length, 1);
+  assertEquals(logs.length, 1);
   assertEquals(store.assistantSaves, []);
   assertEquals(store.userMessages, [newMessage.message]);
 });
