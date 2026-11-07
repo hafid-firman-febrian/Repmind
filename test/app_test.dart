@@ -14,6 +14,8 @@ import 'package:repmind/features/auth/domain/models/auth_status.dart';
 import 'package:repmind/features/auth/presentation/controllers/auth_status_provider.dart';
 import 'package:repmind/features/auth/presentation/pages/splash_page.dart';
 import 'package:repmind/features/auth/presentation/pages/welcome_page.dart';
+import 'package:repmind/features/coach/presentation/controllers/coach_chat_controller.dart';
+import 'package:repmind/features/coach/presentation/pages/coach_page.dart';
 import 'package:repmind/features/home/presentation/pages/home_page.dart';
 import 'package:repmind/features/onboarding/presentation/pages/onboarding_page.dart';
 import 'package:repmind/features/plan/presentation/controllers/active_plan_controller.dart';
@@ -23,6 +25,7 @@ import 'package:repmind/features/profile/domain/models/profile_model.dart';
 import 'package:repmind/features/profile/presentation/controllers/profile_controller.dart';
 
 import 'fakes/fake_active_plan_controller.dart';
+import 'fakes/fake_coach_chat_controller.dart';
 import 'fakes/fake_plan_generation_controller.dart';
 import 'fakes/fake_profile_controller.dart';
 import 'fixtures/plan_fixtures.dart';
@@ -47,6 +50,9 @@ void main() {
           ),
           planGenerationControllerProvider.overrideWith(
             () => FakePlanGenerationController(),
+          ),
+          coachChatControllerProvider.overrideWith(
+            () => FakeCoachChatController(),
           ),
           ...extraOverrides,
         ],
@@ -205,6 +211,21 @@ void main() {
     await tester.pump();
 
     expect(find.byType(PlanPage), findsOneWidget);
+    expect(find.byType(RepmindNavBar), findsOneWidget);
+  });
+
+  testWidgets('the Coach tab opens the chat', (tester) async {
+    await pumpApp(
+      tester,
+      auth: Stream.value(AuthStatus.signedIn),
+      profile: FakeProfileController(sampleProfile()),
+    );
+
+    await tester.tap(find.byTooltip('Coach'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.byType(CoachPage), findsOneWidget);
     expect(find.byType(RepmindNavBar), findsOneWidget);
   });
 

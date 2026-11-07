@@ -10,6 +10,7 @@ import '../../../plan/presentation/widgets/active_plan_section.dart';
 import '../../../profile/presentation/controllers/profile_controller.dart';
 import '../../../profile/presentation/widgets/profile_avatar.dart';
 import '../../application/services/greeting.dart';
+import '../widgets/coach_tip_slot.dart';
 import '../widgets/this_week_card.dart';
 import '../widgets/today_workout_card.dart';
 
@@ -80,6 +81,7 @@ class HomePage extends ConsumerWidget {
                   TodayWorkoutCard(plan: plan, now: now),
                   const SizedBox(height: 12),
                   ThisWeekCard(plan: plan, now: now),
+                  const CoachTipSlot(),
                 ],
               ),
             ),

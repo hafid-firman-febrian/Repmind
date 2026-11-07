@@ -107,4 +107,62 @@ void main() {
       throwsA(isA<NetworkFailure>()),
     );
   });
+
+  group('guardStream', () {
+    test('passes events through unchanged', () async {
+      final events = await guardStream(Stream.fromIterable([1, 2, 3])).toList();
+
+      expect(events, [1, 2, 3]);
+    });
+
+    test('maps a stream error to an app exception', () async {
+      final stream = guardStream(
+        Stream<int>.error(const SocketException('offline')),
+      );
+
+      await expectLater(stream, emitsError(isA<NetworkFailure>()));
+    });
+
+    test('uses the custom mapper when given', () async {
+      final stream = guardStream(
+        Stream<int>.error(StateError('bug')),
+        map: (_) => const WeakPassword(),
+      );
+
+      await expectLater(stream, emitsError(isA<WeakPassword>()));
+    });
+
+    test('keeps the original stack trace', () async {
+      final trace = StackTrace.fromString('original-trace');
+      final stream = guardStream(
+        Stream<int>.error(const SocketException('offline'), trace),
+      );
+
+      Object? caught;
+      StackTrace? caughtTrace;
+      try {
+        await stream.drain<void>();
+      } catch (error, stackTrace) {
+        caught = error;
+        caughtTrace = stackTrace;
+      }
+
+      expect(caught, isA<NetworkFailure>());
+      expect(caughtTrace.toString(), contains('original-trace'));
+    });
+
+    test('delivers events before the error', () async {
+      Stream<int> source() async* {
+        yield 1;
+        throw const SocketException('offline');
+      }
+
+      final stream = guardStream(source());
+
+      await expectLater(
+        stream,
+        emitsInOrder([1, emitsError(isA<NetworkFailure>())]),
+      );
+    });
+  });
 }

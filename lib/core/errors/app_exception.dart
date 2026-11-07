@@ -44,6 +44,27 @@ final class PlanGenerationFailure extends AppException {
       );
 }
 
+final class CoachReplyFailure extends AppException {
+  const CoachReplyFailure()
+    : super("The coach couldn't finish. Try again or change the model.");
+}
+
+final class CoachRetryUnavailable extends AppException {
+  const CoachRetryUnavailable()
+    : super("The coach couldn't finish. Try again or change the model.");
+}
+
+final class ProposalOutdated extends AppException {
+  const ProposalOutdated() : super('Your plan changed since this suggestion.');
+}
+
+final class PlanProfileMismatch extends AppException {
+  const PlanProfileMismatch()
+    : super(
+        'Your profile changed since this plan was made. Adjust your plan first.',
+      );
+}
+
 final class UnknownFailure extends AppException {
   const UnknownFailure() : super('Something went wrong. Please try again.');
 }

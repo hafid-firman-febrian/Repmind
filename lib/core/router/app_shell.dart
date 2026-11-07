@@ -19,7 +19,6 @@ class AppShell extends StatelessWidget {
       icon: Icons.chat_bubble_outline_rounded,
       label: 'Coach',
       tone: NavTone.violet,
-      enabled: false,
     ),
     RepmindNavItem(
       icon: Icons.bar_chart_rounded,

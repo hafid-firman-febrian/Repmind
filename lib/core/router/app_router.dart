@@ -7,6 +7,7 @@ import '../../features/auth/presentation/pages/sign_in_page.dart';
 import '../../features/auth/presentation/pages/sign_up_page.dart';
 import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/auth/presentation/pages/welcome_page.dart';
+import '../../features/coach/presentation/pages/coach_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/plan/presentation/pages/generating_page.dart';
@@ -61,6 +62,14 @@ GoRouter appRouter(Ref ref) {
               GoRoute(
                 path: AppRoutes.plan,
                 builder: (_, _) => const PlanPage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.coach,
+                builder: (_, _) => const CoachPage(),
               ),
             ],
           ),
